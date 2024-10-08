@@ -16,7 +16,7 @@
           <option value="8">埤塘圳路及農業水庫</option>
           <option value="9">漁電共生(地面型)</option>
         </select>
-      </div>
+      </div><hr>
 
       <!-- 農場資訊卡片 -->
       <div v-for="farm in farms" :key="farm.id" class="card" style="padding-bottom: 0px;">
