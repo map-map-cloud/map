@@ -4,6 +4,11 @@
       <div>
         <p class="name-title">{{ name }}</p>
       </div>
+      <div class="systemurl-title text-end" v-if="systemurl" style=" bottom: 10px;">
+        <a :href="systemurl" target="_blank">
+          <button class="btn btn-secondary">後台網址：{{ systemurl }}</button>
+        </a>
+      </div>
     </div>
     <!-- 第一排 -->
     <div class="row">
@@ -216,7 +221,8 @@ import axios from 'axios';
 export default {
   data() {
     return {
-      name: "",
+      name: "", systemurl: "",
+
       address: "",
       longitude: 0,
       latitude: 0,
@@ -244,8 +250,8 @@ export default {
         // 构建请求 URL
         const response = await axios.get(`https://soezsell.com/test-map/1.php?count=${countParam}`);
         const data = response.data[0];
-
         this.name = data.name;
+        this.systemurl = data.systemurl;
         this.address = data.address;
         this.longitude = data.longitude;
         this.latitude = data.latitude;

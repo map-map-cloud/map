@@ -6,20 +6,29 @@
         其他光電案場
         <select id="dataSelect" class="form-control" v-model="selectedDataType" @change="fetchData">
           <option value="0">無</option>
-          <option value="1">不利農業經營區</option>
-          <option value="2">漁業相關設施</option>
-          <option value="3">畜禽舍</option>
-          <option value="4">菇類栽培相關設施</option>
-          <option value="5">溫室</option>
-          <option value="6">農糧製儲銷設施</option>
-          <option value="7">農地變更專案</option>
+          <optgroup label="農業">
+            <option value="1">不利農業經營區</option>
+            <option value="4">菇類栽培相關設施</option>
+            <option value="5">溫室</option>
+            <option value="6">農糧製儲銷設施</option>
+            <option value="7">農地變更專案</option>
+          </optgroup>
+          <optgroup label="漁業">
+            <option value="2">漁業相關設施</option>
+            <option value="9">漁電共生(地面型)</option>
+          </optgroup>
+          <optgroup label="畜牧業">
+            <option value="3">畜禽舍</option>
+          </optgroup>
           <option value="8">埤塘圳路及農業水庫</option>
-          <option value="9">漁電共生(地面型)</option>
         </select>
-      </div><hr>
-
+      </div>
+      <hr>
+      <div class="search">
+        <input type="text" class="form-control" name="search" placeholder="搜尋合作廠商" v-model="searchQuery">
+      </div>
       <!-- 農場資訊卡片 -->
-      <div v-for="farm in farms" :key="farm.id" class="card" style="padding-bottom: 0px;">
+      <div v-for="farm in filteredFarms" :key="farm.id" class="card" style="padding-bottom: 0px;">
         <div>
           <div class="h-d-flex h-mb-3 h-align-items-center">
             <h2 class="h-flex-1">
@@ -38,27 +47,23 @@
         </div>
       </div>
     </div>
-    
-<!-- 地圖容器 -->
-<div class="mapContainer" ref="mapContainer">
-  <!-- 圖層選擇器 -->
-  <div class="layer-select">
-    <button class="layer-icon" @click="toggleLayerMenu">
-      <span class="icon-letter">L</span>
-    </button>
-    <div v-if="isLayerMenuVisible" class="layer-dropdown">
-      <!-- <label for="layerSelect">選擇地圖圖層:</label> -->
-      <select id="layerSelect" class="form-control" v-model="selectedLayer" @change="changeLayer">
-        <option value="streets">街道圖層</option>
-        <option value="terrain">地形圖層</option>
-      </select>
+
+    <!-- 其餘的模板代碼保持不變 -->
+    <div class="mapContainer" ref="mapContainer">
+      <div class="layer-select">
+        <button class="layer-icon" @click="toggleLayerMenu">
+          <span class="icon-letter">L</span>
+        </button>
+        <div v-if="isLayerMenuVisible" class="layer-dropdown">
+          <select id="layerSelect" class="form-control" v-model="selectedLayer" @change="changeLayer">
+            <option value="streets">街道圖層</option>
+            <option value="terrain">地形圖層</option>
+          </select>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
-  </div>
-
-    <!-- footer -->
   <div class="footer" id="footer">
     <div class="fo">
       <div class="footer_logo">
@@ -68,11 +73,9 @@
       </div>
     </div>
   </div>
-  
 </template>
-
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/leaflet.markercluster";
@@ -87,6 +90,17 @@ const farmMarkers = L.markerClusterGroup();
 const newMarkers = L.markerClusterGroup();
 const selectedDataType = ref(0);
 const selectedLayer = ref('streets');
+const searchQuery = ref(''); // 新增搜尋查詢變數
+
+// 過濾農場資料的計算屬性
+const filteredFarms = computed(() => {
+  if (!searchQuery.value) return farms.value;
+
+  const query = searchQuery.value.toLowerCase();
+  return farms.value.filter(farm =>
+    farm.name.toLowerCase().includes(query)
+  );
+});
 
 // 自訂標記圖示
 let customIcon;
@@ -103,7 +117,6 @@ const fetchFarms = async () => {
     console.error('獲取資料時出錯:', error);
   }
 };
-
 // 獲取選擇器資料的函數
 const fetchData = async () => {
   const selectedValue = selectedDataType.value;
@@ -174,7 +187,7 @@ const changeLayer = () => {
     default:
       layerUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
   }
-  
+
   L.tileLayer(layerUrl, {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
@@ -205,7 +218,7 @@ onMounted(() => {
   // 初始化繪圖控制
   const drawItem = new L.FeatureGroup();
   map.addLayer(drawItem);
-  
+
   const option = {
     position: "topleft",
     collapsed: true,
@@ -218,10 +231,10 @@ onMounted(() => {
       featureGroup: drawItem,
     },
   };
-  
+
   const drawControl = new L.Control.Draw(option);
   map.addControl(drawControl);
-  
+
   map.on(L.Draw.Event.CREATED, function (e) {
     const layer = e.layer;
     drawItem.addLayer(layer); // 必須將畫完的圖層加入
@@ -232,7 +245,8 @@ onMounted(() => {
 
 <style>
 .mapContainer {
-  height: 500px; /* 調整地圖容器的高度 */
+  height: 500px;
+  /* 調整地圖容器的高度 */
 }
 </style>
 
@@ -471,28 +485,35 @@ a {
     height: 90vh;
   }
 
-.pop {
-  margin-top: 0px;
-  margin-bottom: 0px;
-}
+  .pop {
+    margin-top: 0px;
+    margin-bottom: 0px;
+  }
 
-.pop h3,
-.pop p {
-  margin: 0px;
-}
+  .pop h3,
+  .pop p {
+    margin: 0px;
+  }
 }
 
 .layer-select {
-  position: absolute; /* 讓選單浮在地圖上 */
-  top: 10px; /* 你可以根據需要調整 */
-  left: 50px; /* 你可以根據需要調整 */
-  z-index: 1000; /* 確保它在地圖之上 */
-  background: white; /* 背景顏色 */
-  padding: 10px; /* 內邊距 */
-  border-radius: 5px; /* 圆角 */
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* 陰影效果 */
+  position: absolute;
+  /* 讓選單浮在地圖上 */
+  top: 10px;
+  /* 你可以根據需要調整 */
+  left: 50px;
+  /* 你可以根據需要調整 */
+  z-index: 1000;
+  /* 確保它在地圖之上 */
+  background: white;
+  /* 背景顏色 */
+  padding: 10px;
+  /* 內邊距 */
+  border-radius: 5px;
+  /* 圆角 */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  /* 陰影效果 */
 }
-
 </style>
 
 
@@ -528,8 +549,8 @@ export default {
   cursor: pointer;
   /* font-size: 24px; */
   color: #007bff;
-      width: 30px;
-    height: 30px;
+  width: 30px;
+  height: 30px;
 }
 
 .layer-dropdown {
