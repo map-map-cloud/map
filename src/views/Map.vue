@@ -25,7 +25,7 @@
       </div>
       <hr>
       <div class="search">
-        <input type="text" class="form-control" name="search" placeholder="搜尋合作廠商" v-model="searchQuery">
+        <input type="text" class="form-control" name="search" placeholder="搜尋已登記場案" v-model="searchQuery">
       </div>
       <!-- 農場資訊卡片 -->
       <div v-for="farm in filteredFarms" :key="farm.id" class="card" style="padding-bottom: 0px;">

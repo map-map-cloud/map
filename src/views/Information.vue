@@ -4,15 +4,15 @@
       <div>
         <p class="name-title">{{ name }}</p>
       </div>
-      <div class="systemurl-title text-end" v-if="systemurl" style=" bottom: 10px;">
+      <div class="systemurl-title text-end" v-if="systemurl" style="bottom: 10px;">
         <a :href="systemurl" target="_blank">
           <button class="btn btn-secondary">後台網址：{{ systemurl }}</button>
         </a>
       </div>
     </div>
+
     <!-- 第一排 -->
     <div class="row">
-      <!-- 第1個 -->
       <div class="col-xl-8">
         <div class="card-box-4">
           <h4 class="header-title mt-0 mb-3">場域資訊</h4>
@@ -45,54 +45,16 @@
       </div>
     </div>
 
-    <!-- 第2排 -->
     <div class="row">
-      <!-- 種植面積 -->
-      <div class="col-xl-3 col-md-6">
+      <div class="col-xl-4 col-md-4 col-sm-6" v-for="(value, key) in cropData" :key="key">
         <div class="card-box-3 widget-user">
           <div>
             <div class="wid-u-info">
-              <h5 class="mt-0">種植面積:</h5>
-              <p class="text-muted-3 mb-1 font-13 text-truncate">{{ area }}</p>
-              <small class="text-warning"><b>分地</b></small>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 農作物型態 -->
-      <div class="col-xl-3 col-md-6">
-        <div class="card-box-3 widget-user">
-          <div>
-            <div class="wid-u-info">
-              <h5 class="mt-0">農作物型態:</h5>
-              <p class="text-muted-3 mb-1 font-13 text-truncate">{{ cropType }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- 第3個 -->
-      <div class="col-xl-3 col-md-6">
-        <div class="card-box-3 widget-user">
-          <div>
-            <div class="wid-u-info">
-              <h5 class="mt-0">預估每株農作產量:</h5>
+              <h5 class="mt-0">{{ key }}:</h5>
               <p class="text-muted-3 mb-1 font-13 text-truncate">
-                {{ amount }}
+                {{ value }}
+                <small v-if="unitMapping[key]">{{ unitMapping[key] }}</small>
               </p>
-              <small class="text-warning"><b>公斤</b></small>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- 預估總農作產量 -->
-      <div class="col-xl-3 col-md-6">
-        <div class="card-box-3 widget-user">
-          <div>
-            <div class="wid-u-info">
-              <h5 class="mt-0">預估總農作產量:</h5>
-              <p class="text-muted-3 mb-1 font-13 text-truncate">{{ totalOutput }}</p>
-              <small class="text-warning"><b>噸</b></small>
             </div>
           </div>
         </div>
@@ -106,134 +68,63 @@
       </div>
     </div>
 
-    <!-- 第3排 -->
-    <div class="row" style="margin-bottom: 100px">
-      <!-- 發電設備類型 -->
-      <div class="col-xl-3 col-md-6">
-        <div class="card-box-1">
-          <h4 class="header-title mt-0 mb-4">發電設備類型:</h4>
-          <div class="widget-chart-1">
-            <div class="widget-detail-1 text-right">
-              <h2 class="font-weight-normal pt-2 mb-1">{{ equipment }}</h2>
+    <div class="row">
+      <div class="col-xl-4 col-md-4 col-sm-6" v-for="(value, key) in energyData" :key="key">
+        <div class="card-box-3 widget-user">
+          <div>
+            <div class="wid-u-info">
+              <h5 class="mt-0">{{ key }}:</h5>
+              <p class="text-muted-3 mb-1 font-13 text-truncate">
+                {{ value }}
+                <small v-if="unitMapping[key]">{{ unitMapping[key] }}</small>
+              </p>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- 再生能源類型 -->
-      <div class="col-xl-3 col-md-6">
-        <div class="card-box-1">
-          <h4 class="header-title mt-0 mb-4">再生能源類型:</h4>
-          <div class="widget-chart-1">
-            <div class="widget-detail-1 text-right">
-              <h2 class="font-weight-normal pt-2 mb-1">{{ energyType }}</h2>
-              <p class="text-muted mb-1">PV</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 裝置設置位置 -->
-      <div class="col-xl-3 col-md-6">
-        <div class="card-box-1">
-          <h4 class="header-title mt-0 mb-4">裝置設置位置:</h4>
-          <div class="widget-chart-1">
-            <div class="widget-detail-1 text-right">
-              <h2 class="font-weight-normal pt-2 mb-1">{{ location }}</h2>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 總裝置容量 -->
-      <div class="col-xl-3 col-md-6">
-        <div class="card-box-1">
-          <h4 class="header-title mt-0 mb-4">總裝置容量:</h4>
-          <div class="widget-chart-1">
-            <div class="widget-detail-1 text-right">
-              <h2 class="font-weight-normal pt-2 mb-1">{{ capacity }}</h2>
-              <p class="text-muted mb-1">KW</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 第4排 -->
-    <div class="row" style="margin-bottom: 100px">
-      <!-- 第1個 -->
-      <div class="col-xl-2 col-md-6">
-        <div class="card-box-1">
-          <h4 class="header-title mt-0 mb-4">溫室氣體排放量( ISO 14064):</h4>
-          <div class="widget-chart-1">
-            <div class="widget-detail-1 text-right">
-              <h2 class="font-weight-normal pt-2 mb-1">{{ emissions }}</h2>
-              <p class="text-muted mb-1">KG</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- 第2個 -->
-      <div class="col-xl-2 col-md-6">
-        <div class="card-box-1">
-          <h4 class="header-title mt-0 mb-4">減碳量( 每年發電量(kWh) *0.509/1000):</h4>
-          <div class="widget-chart-1">
-            <div class="widget-detail-1 text-right">
-              <h2 class="font-weight-normal pt-2 mb-1">{{ reduceCo2 }}</h2>
-              <p class="text-muted mb-1">KG</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Loading Spinner -->
-  <div v-else>
-    <p>Loading...</p>
-  </div>
-  <!-- footer -->
-  <div class="wrapper">
-    <div class="wave"></div>
-    <div class="wave two"></div>
-    <div class="wave three"></div>
-    <div class="fo">
-      <div class="footer_logo">
-        <span style="font-size: 24px">
-          <p>亞洲大學</p>
-        </span>
-      </div>
-      <div class="footer-text">
-        <p class="footer-text-i">聯絡我們</p>
-        <hr />
-        <p class="footer-text-i">地址:41354台中市霧峰區柳豐路500號</p>
-        <p class="footer-text-i">電話: 04-23323456#6502</p>
-        <p class="footer-text-i">信箱:cnwang@aisa.edu.tw</p>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
+import axios from "axios";
 
 export default {
   data() {
     return {
-      name: "", systemurl: "",
-
+      name: "",
+      systemurl: "",
       address: "",
       longitude: 0,
       latitude: 0,
-      area: "",
-      cropType: "",
-      totalOutput: "",
-      equipment: "",
-      energyType: "",
-      location: "",
-      capacity: "",
-      dataLoaded: false
+      cropData: {
+        "作物名稱": "",
+        "種植面積": "",
+        "種植時間": "",
+        "預估收成日期": "",
+        "預估每株農作產量": "",
+        "預估總農作產量": "",
+      },
+      energyData: {
+        "能源類型": "",
+        "能源設備名稱": "",
+        "裝置容量": "",
+        "每月預估產量": "",
+        "每月預估耗能": "",
+        "溫室氣體排放量": "",
+        "減碳量": "",
+      },
+      unitMapping: {
+        "種植面積": "平方公尺",
+        "預估每株農作產量": "公斤",
+        "預估總農作產量": "公斤",
+        "裝置容量": "kW",
+        "每月預估產量": "kWh",
+        "每月預估耗能": "kWh",
+        "溫室氣體排放量": "公斤",
+        "減碳量": "公斤",
+      },
+      dataLoaded: false,
     };
   },
   mounted() {
@@ -242,39 +133,46 @@ export default {
   methods: {
     async fetchData() {
       try {
-        // 获取当前 URL
         const currentUrl = window.location.href;
-        // 使用正则表达式提取 URL 中最后一个斜杠后的所有数字
-        const countParam = currentUrl.match(/\/(\d+)$/)[1]; // 提取最后一个斜杠后的数字
+        const countParam = currentUrl.match(/\/(\d+)$/)[1];
 
-        // 构建请求 URL
-        const response = await axios.get(`https://soezsell.com/test-map/1.php?count=${countParam}`);
+        const response = await axios.get(
+          `https://soezsell.com/test-map/1.php?count=${countParam}`
+        );
         const data = response.data[0];
+
+        // 場域基本資訊
         this.name = data.name;
         this.systemurl = data.systemurl;
         this.address = data.address;
         this.longitude = data.longitude;
         this.latitude = data.latitude;
-        this.area = data.area;
-        this.cropType = data.cropType;
-        this.totalOutput = data.totalOutput;
-        this.equipment = data.equipment;
-        this.energyType = data.energyType;
-        this.location = data.location;
-        this.capacity = data.capacity;
-        this.emissions = data.emissions;
-        this.reduceCo2 = data.reduceCo2;
-        this.amount = data.amount;
 
-        this.dataLoaded = true; // 表示資料已載入完成
+        // 農作物資訊
+        this.cropData["作物名稱"] = data.crop_name;
+        this.cropData["種植面積"] = data.cultivation_area;
+        this.cropData["種植時間"] = data.planting_time;
+        this.cropData["預估收成日期"] = data.harvest_time;
+        this.cropData["預估每株農作產量"] = data.estimated_yield_per_unit;
+        this.cropData["預估總農作產量"] = data.estimated_total_yield;
+
+        // 能源資訊
+        this.energyData["能源類型"] = data.energy_type;
+        this.energyData["能源設備名稱"] = data.energy_equipment_name;
+        this.energyData["裝置容量"] = data.capacity;
+        this.energyData["每月預估產量"] = data.monthly_production_rate;
+        this.energyData["每月預估耗能"] = data.monthly_consumption_rate;
+        this.energyData["溫室氣體排放量"] = data.greenhouse_gas_emissions;
+        this.energyData["減碳量"] = data.carbon_reduction;
+
+        this.dataLoaded = true;
       } catch (error) {
         console.error("Error fetching data:", error);
       }
-    }
-  }
+    },
+  },
 };
 </script>
-
 
 <style scoped>
 .dashboard {
@@ -445,7 +343,6 @@ export default {
 }
 
 .text-muted-3 {
-  width: 50%;
   margin: 0px auto;
   margin-top: 10px;
   font-size: 30px;
@@ -1131,4 +1028,6 @@ h5 {
   font-family: Karla, sans-serif;
   color: #343a40;
 }
+
+
 </style>
