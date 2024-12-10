@@ -114,7 +114,7 @@ a {
 /*footer*/
 .wrapper {
   width: 100%;
-  height: 350px;
+  height: 380px;
   background: #fff;
   position: relative;
   overflow: hidden;
