@@ -139,16 +139,39 @@ const addFarmMarkers = (farmData) => {
           <h3>${farm.name}</h3>
           <div>地址: ${farm.address}</div>
           <div>電話: ${farm.phone || '未提供'}</div>
+          <div style="margin-top: 10px;">
+            <a href="/Information/${farm.id}" style="color: blue; text-decoration: underline;" target="_blank">
+              查看詳細資料
+            </a>
+          </div>
         </div>
       `);
     farmMarkers.addLayer(marker);
   });
 };
 
-// 添加新資料標記
+// 定義光電案場類型的對應標籤
+const dataTypeLabels = {
+  0: '', // 無
+  1: '不利農業經營區',
+  2: '漁業相關設施',
+  3: '畜禽舍',
+  4: '菇類栽培相關設施',
+  5: '溫室',
+  6: '農糧製儲銷設施',
+  7: '農地變更專案',
+  8: '埤塘圳路及農業水庫',
+  9: '漁電共生(地面型)',
+};
+
 const addNewMarkers = (data) => {
+  const selectedLabel = dataTypeLabels[selectedDataType.value] || '';
+
   data.forEach((item) => {
     if (item.X_84 && item.Y_84 && item.CapacityValNow > 0) {
+      // 動態附加類型標籤
+      const displayName = selectedLabel ? `${item.Name} (${selectedLabel})` : item.Name;
+
       const circle = L.circle([item.X_84, item.Y_84], {
         color: 'red',
         fillColor: 'red',
@@ -156,7 +179,7 @@ const addNewMarkers = (data) => {
         radius: 50,
       }).bindPopup(`
         <div class="pop">
-          <b>${item.Name}</b><br>
+          <b>${displayName}</b><br>
           ${item.Land}<br>
           容量: ${item.CapacityValNow} kW
         </div>
