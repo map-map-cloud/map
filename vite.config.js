@@ -10,7 +10,7 @@ export default defineConfig({
     port: 80          // 修改端口為80
   },
   plugins: [vue()],
-  base: './',
+  base: '/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
