@@ -37,15 +37,15 @@
         </div>
       </div>
 
-      <!-- 使用 iframe 嵌入地圖 -->
       <div class="col-xl-5">
+        <!-- 嵌入 OpenStreetMap iframe -->
         <iframe v-if="mapUrl" :src="mapUrl" style="width: 100%; height: 250px; border: 0; position: relative;"
           allowfullscreen="" loading="lazy"></iframe>
         <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 25px; background: white;"></div>
       </div>
     </div>
 
-    <!-- 其他資訊 -->
+    <!-- 農作物資訊 -->
     <div class="name">
       <div>
         <p class="name-title">農作物資訊</p>
@@ -67,6 +67,50 @@
         </div>
       </div>
     </div>
+
+    <!-- 能源資訊 -->
+    <div class="name">
+      <div>
+        <p class="name-title">能源資訊</p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-xl-4 col-md-4 col-sm-6" v-for="(value, key) in energyData" :key="key">
+        <div class="card-box-3 widget-user">
+          <div>
+            <div class="wid-u-info">
+              <h5 class="mt-0">{{ key }}:</h5>
+              <p class="text-muted-3 mb-1 font-13 text-truncate">
+                {{ value }}
+                <small v-if="unitMapping[key]">{{ unitMapping[key] }}</small>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- footer -->
+  <div class="wrapper">
+    <div class="wave"></div>
+    <div class="wave two"></div>
+    <div class="wave three"></div>
+    <div class="fo">
+      <div class="footer_logo">
+        <span style="font-size: 24px">
+          <p>亞洲大學</p>
+        </span>
+      </div>
+      <div class="footer-text">
+        <p class="footer-text-i">聯絡我們</p>
+        <hr />
+        <p class="footer-text-i">地址:41354台中市霧峰區柳豐路500號</p>
+        <p class="footer-text-i">電話: 04-23323456#6502</p>
+        <p class="footer-text-i">信箱:cnwang@aisa.edu.tw</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -82,6 +126,7 @@ export default {
       address: "",
       longitude: 0,
       latitude: 0,
+      mapUrl: "",
       cropData: {
         "作物名稱": "",
         "種植面積": "",
@@ -90,10 +135,24 @@ export default {
         "預估每株農作產量": "",
         "預估總農作產量": "",
       },
+      energyData: {
+        "能源類型": "",
+        "能源設備名稱": "",
+        "裝置容量": "",
+        "每月預估產量": "",
+        "每月預估耗能": "",
+        "溫室氣體排放量": "",
+        "減碳量": "",
+      },
       unitMapping: {
         "種植面積": "平方公尺",
         "預估每株農作產量": "公斤",
         "預估總農作產量": "公斤",
+        "裝置容量": "kW",
+        "每月預估產量": "kWh",
+        "每月預估耗能": "kWh",
+        "溫室氣體排放量": "公斤",
+        "減碳量": "公斤",
       },
       dataLoaded: false,
     };
@@ -101,14 +160,6 @@ export default {
   setup() {
     const route = useRoute();
     return { route };
-  },
-  computed: {
-    mapUrl() {
-      if (this.latitude && this.longitude) {
-        return `https://www.openstreetmap.org/export/embed.html?bbox=${this.longitude - 0.01},${this.latitude - 0.01},${this.longitude + 0.01},${this.latitude + 0.01}&layer=mapnik&marker=${this.latitude},${this.longitude}`;
-      }
-      return "";
-    },
   },
   mounted() {
     this.fetchData();
@@ -122,19 +173,31 @@ export default {
         );
         const data = response.data[0];
 
-        // 更新數據
         this.name = data.name;
         this.systemurl = data.systemurl;
         this.address = data.address;
-        this.longitude = parseFloat(data.longitude);
-        this.latitude = parseFloat(data.latitude);
+        this.longitude = data.longitude;
+        this.latitude = data.latitude;
 
+        // 設定地圖的 iframe URL
+        this.mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${this.longitude - 0.01},${this.latitude - 0.01},${this.longitude + 0.01},${this.latitude + 0.01}&layer=mapnik&marker=${this.latitude},${this.longitude}`;
+
+        // 農作物資訊
         this.cropData["作物名稱"] = data.crop_name;
         this.cropData["種植面積"] = data.cultivation_area;
         this.cropData["種植時間"] = data.planting_time;
         this.cropData["預估收成日期"] = data.harvest_time;
         this.cropData["預估每株農作產量"] = data.estimated_yield_per_unit;
         this.cropData["預估總農作產量"] = data.estimated_total_yield;
+
+        // 能源資訊
+        this.energyData["能源類型"] = data.energy_type;
+        this.energyData["能源設備名稱"] = data.energy_equipment_name;
+        this.energyData["裝置容量"] = data.capacity;
+        this.energyData["每月預估產量"] = data.monthly_production_rate;
+        this.energyData["每月預估耗能"] = data.monthly_consumption_rate;
+        this.energyData["溫室氣體排放量"] = data.greenhouse_gas_emissions;
+        this.energyData["減碳量"] = data.carbon_reduction;
 
         this.dataLoaded = true;
       } catch (error) {
@@ -146,6 +209,10 @@ export default {
 </script>
 
 <style scoped>
+#map {
+  height: 300px;
+}
+
 .dashboard {
   max-width: 80%;
   margin: 20px auto;
