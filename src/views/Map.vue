@@ -232,6 +232,12 @@ onMounted(() => {
     iconSize: [22, 32],
   });
 
+  // 自訂目前位置的圖示
+  const currentLocationIcon = L.icon({
+    iconUrl: "https://raw.githubusercontent.com/map-map-cloud/map/refs/heads/main/src/assets/location.png", // 修改圖標顏色或樣式
+    iconSize: [22, 32],
+  });
+
   // 添加標記群集層
   map.addLayer(farmMarkers);
   map.addLayer(newMarkers);
@@ -261,8 +267,66 @@ onMounted(() => {
   map.on(L.Draw.Event.CREATED, function (e) {
     const layer = e.layer;
     drawItem.addLayer(layer); // 必須將畫完的圖層加入
-    console.log('繪製的圖層:', layer);
+    console.log("繪製的圖層:", layer);
   });
+
+  // 添加「定位」圖標按鈕
+  const locateIcon = L.Control.extend({
+    options: {
+      position: "topleft", // 設定圖標位置
+    },
+    onAdd: function () {
+      const container = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+      const icon = L.DomUtil.create("a", "", container);
+      icon.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" style="width:24px;height:24px;" alt="定位" />`; // 定位圖標
+      icon.href = "#";
+
+      // 點擊事件：定位使用者
+      L.DomEvent.on(icon, "click", function (e) {
+        L.DomEvent.stopPropagation(e);
+        L.DomEvent.preventDefault(e);
+        locateUser(); // 呼叫定位函數
+      });
+
+      return container;
+    },
+  });
+
+  // 在地圖上新增定位按鈕
+  map.addControl(new locateIcon());
+
+  // 定義定位函數
+  const locateUser = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+
+          // 將地圖中心設為目前位置
+          map.setView([latitude, longitude], 15);
+
+          // 在地圖上顯示目前位置的標記
+          const currentLocationMarker = L.marker([latitude, longitude], {
+            icon: currentLocationIcon, // 使用不同的圖示
+          })
+            .addTo(map)
+            .bindPopup("目前位置")
+            .openPopup();
+
+          console.log("目前位置:", { latitude, longitude });
+        },
+        (error) => {
+          console.error("定位失敗:", error.message);
+          alert("無法取得目前位置，請檢查瀏覽器定位權限是否開啟。");
+        },
+        {
+          enableHighAccuracy: true, // 啟用高精度模式
+        }
+      );
+    } else {
+      alert("您的瀏覽器不支援地理定位功能。");
+    }
+  };
 });
 </script>
 
