@@ -37,7 +37,10 @@
               </a>
             </h2>
           </div>
-          <p class="h5 h-text-dark">{{ farm.address }}</p>
+          <p class="h5 h-text-dark" @click="focusOnLocation(farm.latitude, farm.longitude)"
+            style="cursor: pointer;">
+            {{ farm.address }}
+          </p>
           <p class="h5 h-text-dark">{{ farm.phone || '未提供' }}</p>
           <div class="card-body">
             <RouterLink :to="`/Information/${farm.id}`" class="card-body-t">
@@ -216,6 +219,13 @@ const changeLayer = () => {
   }).addTo(map);
 };
 
+// 聚焦到指定座標
+const focusOnLocation = (lat, lng) => {
+  if (map) {
+    map.setView([lat, lng], 15);
+  }
+};
+
 onMounted(() => {
   // 初始化地圖
   map = L.map(mapContainer.value, {
@@ -339,6 +349,7 @@ onMounted(() => {
 
 
 <style scoped>
+
 .a {
   width: 100%;
 }
