@@ -25,9 +25,7 @@
                     {{ address }}
                     <a :href="`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`"
                       target="_blank" class="google-maps-link">
-                      <img
-                        src="https://raw.githubusercontent.com/map-map-cloud/map/refs/heads/main/src/assets/Google-maps-icon.png"
-                        alt="Google Maps"
+                      <img src="/src/assets/Google-maps-icon.png" alt="Google Maps"
                         style="margin-left: 8px; width: 24px; height: 24px; vertical-align: middle;" />
                     </a>
                   </td>
