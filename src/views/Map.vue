@@ -112,7 +112,7 @@ let map;
 // 獲取農場資料的函數
 const fetchFarms = async () => {
   try {
-    const response = await fetch('https://soezsell.com/test-map/1.php');
+    const response = await fetch('https://soezsell.com/test-map/data.php');
     const data = await response.json();
     farms.value = data;
     addFarmMarkers(data);

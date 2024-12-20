@@ -176,7 +176,7 @@ export default {
       try {
         const id = this.route.params.id;
         const response = await axios.get(
-          `https://soezsell.com/test-map/1.php?count=${id}`
+          `https://soezsell.com/test-map/data.php?count=${id}`
         );
         const data = response.data[0];
 
