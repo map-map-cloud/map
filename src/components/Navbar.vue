@@ -1,26 +1,29 @@
 <template>
   <header>
-      <RouterLink to="/" class="navbarBrand">綠能下的數位地圖</RouterLink>
-      <input type="checkbox" class="navbarToggle" id="navbarToggle" />
-      <nav class="nav navbar-light" >
-        <ul class="navList">
-          <li class="navItem">
-            <RouterLink to="/" class="nav-link">首頁</RouterLink>
-          </li>
-          <li class="navItem">
-            <RouterLink to="/Map" class="nav-link active" aria-current="page">地圖</RouterLink>
-          </li>
-          <li class="navItem">
-            <RouterLink to="/about" class="nav-link">合作單位</RouterLink>
-          </li>
-          <li class="navItem">
-            <RouterLink to="/aboutme" class="nav-link">關於我們</RouterLink>
-          </li>
-        </ul>
-      </nav>
-      <label class="navbarToggle-label" for="navbarToggle">
-        <span class="hamburger"></span>
-      </label>
+    <RouterLink to="/" class="navbarBrand">綠能下的數位地圖</RouterLink>
+    <input type="checkbox" class="navbarToggle" id="navbarToggle" />
+    <nav class="nav navbar-light">
+      <ul class="navList">
+        <li class="navItem">
+          <RouterLink to="/" class="nav-link">首頁</RouterLink>
+        </li>
+        <li class="navItem">
+          <RouterLink to="/Map" class="nav-link active" aria-current="page">地圖</RouterLink>
+        </li>
+        <li class="navItem">
+          <RouterLink to="/powerinfo" class="nav-link active" aria-current="page">綠能統計</RouterLink>
+        </li>
+        <li class="navItem">
+          <RouterLink to="/about" class="nav-link">合作單位</RouterLink>
+        </li>
+        <li class="navItem">
+          <RouterLink to="/aboutme" class="nav-link">關於我們</RouterLink>
+        </li>
+      </ul>
+    </nav>
+    <label class="navbarToggle-label" for="navbarToggle">
+      <span class="hamburger"></span>
+    </label>
   </header>
 </template>
 

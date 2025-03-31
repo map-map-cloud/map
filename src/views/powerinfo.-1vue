@@ -1,0 +1,236 @@
+<template>
+    <div class="power-info">
+        <div class="sidebar">
+            <!-- 雲林縣總體發電統計 -->
+            <div class="summary">
+                <span>光電案場數量：{{ totalSites }} 個</span>
+                <span>總發電容量：{{ totalPower }} kW</span>
+            </div>
+            <!-- 全部展開 / 收合按鈕 -->
+            <button class="toggle-all-btn" @click="toggleAll">
+                {{ isAllExpanded ? '全部收合' : '全部展開' }}
+            </button>
+            <!-- 市 -->
+            <div class="category">
+                <div class="category-title" @click="expanded.city = !expanded.city">
+                    市
+                </div>
+                <ul v-show="expanded.city">
+                    <li v-for="item in areas.city" :key="item" @click="selectArea(item)">
+                        {{ item }}
+                    </li>
+                </ul>
+            </div>
+            <!-- 鎮 -->
+            <div class="category">
+                <div class="category-title" @click="expanded.town = !expanded.town">
+                    鎮
+                </div>
+                <ul v-show="expanded.town">
+                    <li v-for="item in areas.town" :key="item" @click="selectArea(item)">
+                        {{ item }}
+                    </li>
+                </ul>
+            </div>
+            <!-- 鄉 -->
+            <div class="category">
+                <div class="category-title" @click="expanded.village = !expanded.village">
+                    鄉
+                </div>
+                <ul v-show="expanded.village">
+                    <li v-for="item in areas.village" :key="item" @click="selectArea(item)">
+                        {{ item }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content">
+            <h2>{{ selectedArea ? `${selectedArea} 統計資訊` : '請選擇鄉鎮市區' }}</h2>
+            <div v-if="selectedArea">
+                <p>案場數量：{{ selectedStats.sites }}</p>
+                <p>總發電容量：{{ selectedStats.power }} kW</p>
+                <!-- 顯示地圖 -->
+                <div id="map" class="map"></div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, watch, onMounted, nextTick } from 'vue'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+const areas = {
+    city: ['斗六市'],
+    town: ['土庫鎮', '斗南鎮', '北港鎮', '虎尾鎮', '西螺鎮'],
+    village: ['大埤鄉', '元長鄉', '四湖鄉', '口湖鄉', '古坑鄉', '台西鄉', '崙背鄉', '東勢鄉', '林內鄉', '莿桐鄉', '褒忠鄉', '麥寮鄉']
+}
+
+const expanded = ref({ city: true, town: true, village: true })
+const isAllExpanded = ref(true)
+
+function toggleAll() {
+    const expand = !isAllExpanded.value
+    expanded.value.city = expand
+    expanded.value.town = expand
+    expanded.value.village = expand
+    isAllExpanded.value = expand
+}
+
+const selectedArea = ref('')
+const selectedStats = ref({ sites: 0, power: 0 })
+
+// 模擬座標資料（你可改用 API 或資料庫提供真實數據）
+const areaCoordinates = {
+    '斗六市': [23.7094, 120.5436],
+    '土庫鎮': [23.6746, 120.3782],
+    '斗南鎮': [23.6756, 120.4808],
+    '北港鎮': [23.5688, 120.2995],
+    '虎尾鎮': [23.7084, 120.4331],
+    '西螺鎮': [23.7977, 120.4653],
+    '大埤鄉': [23.6424, 120.4482],
+    '元長鄉': [23.6504, 120.3089],
+    '四湖鄉': [23.6287, 120.1976],
+    '口湖鄉': [23.5718, 120.1431],
+    '古坑鄉': [23.6515, 120.6036],
+    '台西鄉': [23.7091, 120.1994],
+    '崙背鄉': [23.7592, 120.3471],
+    '東勢鄉': [23.6628, 120.2617],
+    '林內鄉': [23.7522, 120.6215],
+    '莿桐鄉': [23.7722, 120.5047],
+    '褒忠鄉': [23.7032, 120.3148],
+    '麥寮鄉': [23.7519, 120.2552]
+}
+
+let map = null
+let marker = null
+
+function initMap(center) {
+    map = L.map('map').setView(center, 13)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap 貢獻者'
+    }).addTo(map)
+    marker = L.marker(center).addTo(map)
+}
+
+function updateMap(center) {
+    if (map && marker) {
+        map.setView(center, 13)
+        marker.setLatLng(center)
+    }
+}
+
+function selectArea(area) {
+    selectedArea.value = area
+    selectedStats.value = {
+        sites: Math.floor(Math.random() * 100),
+        power: Math.floor(Math.random() * 10000)
+    }
+
+    const coords = areaCoordinates[area]
+    if (coords) {
+        nextTick(() => {
+            if (!map) {
+                initMap(coords)
+            } else {
+                updateMap(coords)
+            }
+        })
+    }
+}
+
+const totalSites = 320
+const totalPower = 158000
+</script>
+
+<style scoped>
+.power-info {
+    display: flex;
+    height: calc(100vh - 60px);
+    margin-bottom: 60px;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 260px;
+    background-color: #f1f1f1;
+    padding: 20px;
+    overflow-y: auto;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.content {
+    flex-grow: 1;
+    padding: 30px;
+    background-color: #fff;
+    overflow-y: auto;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.category {
+    margin-bottom: 20px;
+}
+
+.category-title {
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 8px;
+    background-color: #ddd;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.category ul {
+    list-style-type: none;
+    padding-left: 15px;
+}
+
+.category li {
+    cursor: pointer;
+    margin: 6px 0;
+    color: #007bff;
+}
+
+.category li:hover {
+    text-decoration: underline;
+}
+
+.summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.summary span {
+    white-space: nowrap;
+}
+
+.toggle-all-btn {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.toggle-all-btn:hover {
+    background-color: #0056b3;
+}
+
+.map {
+    width: 100%;
+    height: 400px;
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+</style>

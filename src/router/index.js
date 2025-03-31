@@ -16,6 +16,11 @@ const router = createRouter({
       component: () => import('../views/Map.vue')
     }, 
     {
+      path: '/powerinfo',
+      name: 'powerinfo',
+      component: () => import('../views/powerinfo.vue')
+    }, 
+    {
       path: '/Information/:id',
       name: 'Information',
       component: () => import('../views/Information.vue')

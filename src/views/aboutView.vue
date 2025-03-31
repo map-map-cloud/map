@@ -41,17 +41,121 @@
 
 <style scoped>
 .about {
-  max-width: 80%;
-  margin: 10px auto;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
 }
 
 .img {
-  background-image: url("https://www.asia.edu.tw/uploads/asset/data/61c1e6878199fbf80ea9e204/yard0.jpg");
-  background-position: center;
-  background-size: cover;
   width: 100%;
-  height: 60vh;
-  margin: 20px auto;
+  height: 300px;
+  background-image: url("https://www.asia.edu.tw/uploads/asset/data/61c1e6878199fbf80ea9e204/yard0.jpg");
+    background-size: cover;
+  background-position: center;
+  border-radius: 20px;
+  margin-bottom: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.img::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.aboutO {
+  background: #fff;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 10px 30px rgba(3, 134, 134, 0.08);
+  position: relative;
+  margin-top: -100px;
+  z-index: 1;
+  animation: slideUp 0.8s ease-out forwards;
+}
+
+.aboutOTitle {
+  color: #038686;
+  font-size: 32px !important;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+.aboutOTitle::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #038686, #04a4a4);
+  border-radius: 2px;
+}
+
+.aboutO p {
+  color: #555;
+  font-size: 16px;
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
+  padding: 0 !important;
+  text-align: justify;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.aboutO p:hover {
+  transform: translateY(-2px);
+}
+
+hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #038686, transparent);
+  margin: 3rem 0;
+  opacity: 0.3;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .about {
+    padding: 2rem 1rem;
+  }
+  
+  .img {
+    height: 200px;
+    margin-bottom: 2rem;
+  }
+  
+  .aboutO {
+    padding: 2rem 1.5rem;
+    margin-top: -50px;
+  }
+  
+  .aboutOTitle {
+    font-size: 24px !important;
+    margin-bottom: 1.5rem;
+  }
+  
+  .aboutO p {
+    font-size: 15px;
+  }
 }
 
 /*O*/
@@ -63,54 +167,155 @@
 
 /*A*/
 .aboutA {
-  max-width: 100%;
-  margin: 60px auto;
-}
-.aboutATitle {
-  max-width: 100%;
-  font-size: 24px;
-  text-align: center;
-  margin: 10px auto;
-  color: #000;
-}
-.aboutAImg1 {
-  background-image: url("../assets/22.jpg");
-  background-position: center;
-  background-size: cover;
-  width: 100%;
-  height: 50vh;
-  margin: 20px auto;
-}
-.aboutAtext {
-  max-width: 100%;
-  margin: 30px auto;
-}
-.aboutAImg2 {
-  background-image: url("../assets/21.jpg");
-  background-position: center;
-  background-size: cover;
-  width: 100%;
-  height: 50vh;
-  margin: 20px auto;
-}
-.aboutAImg3 {
-  background-image: url("https://cdn.discordapp.com/attachments/965299322046537822/1093566385684238366/unnamed.jpg");
-  background-position: center;
-  background-size: cover;
-  width: 100%;
-  height: 50vh;
-  margin: 20px auto;
+  max-width: 1200px;
+  margin: 80px auto;
+  padding: 0 2rem;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp 0.8s ease-out forwards;
 }
 
-hr {
-  width: 100%;
-  margin-bottom: 50px;
+.aboutATitle {
+  font-size: 32px;
+  text-align: center;
+  margin: 0 auto 40px;
   color: #038686;
+  font-weight: bold;
+  position: relative;
+  padding-bottom: 15px;
 }
-a {
-  text-decoration: none;
-  color: #000;
+
+.aboutATitle::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, #038686, #04a4a4);
+  border-radius: 2px;
 }
+
+.aboutAInf {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+  margin: 40px 0;
+  position: relative;
+}
+
+.aboutAImg {
+  flex: 1;
+  height: 400px;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s ease;
+}
+
+.aboutAImg:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(3, 134, 134, 0.15);
+}
+
+.aboutAImg::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(3, 134, 134, 0.4), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.aboutAImg:hover::after {
+  opacity: 1;
+}
+
+.aboutAtext {
+  flex: 1;
+  font-size: 17px;
+  line-height: 1.8;
+  color: #444;
+  text-align: justify;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+  border-left: 4px solid #038686;
+}
+
+.aboutAtext:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(3, 134, 134, 0.1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 968px) {
+  .aboutA {
+    margin: 60px auto;
+    padding: 0 1.5rem;
+  }
+
+  .aboutAInf {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .aboutAImg {
+    width: 100%;
+    height: 300px;
+  }
+
+  .aboutAtext {
+    width: 100%;
+    font-size: 16px;
+    padding: 15px;
+  }
+
+  .aboutATitle {
+    font-size: 28px;
+    margin-bottom: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .aboutA {
+    margin: 40px auto;
+    padding: 0 1rem;
+  }
+
+  .aboutAImg {
+    height: 250px;
+  }
+
+  .aboutAtext {
+    font-size: 15px;
+    padding: 15px;
+  }
+
+  .aboutATitle {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+}
+
 /*footer*/
 .wrapper {
   width: 100%;
