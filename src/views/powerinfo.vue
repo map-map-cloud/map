@@ -50,6 +50,7 @@
                 <div class="tabs">
                     <button @click="activeTab = 'map'" :class="{ active: activeTab === 'map' }">地圖顯示</button>
                     <button @click="activeTab = 'chart'" :class="{ active: activeTab === 'chart' }">可視化圖</button>
+                    <button @click="activeTab = 'comparison'" :class="{ active: activeTab === 'comparison' }">縣市比較</button>
                 </div>
                 <div class="overview-section">
                     <div v-show="activeTab === 'map'" id="overviewMap" class="overview-map"></div>
@@ -60,6 +61,16 @@
                             </div>
                             <div class="chart-wrapper">
                                 <canvas id="myStackedChart" class="chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-show="activeTab === 'comparison'" class="comparison-container">
+                        <div class="comparison-row">
+                            <div class="chart-wrapper">
+                                <canvas id="comparisonPieChart" class="chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="comparisonChart" class="chart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -100,7 +111,20 @@ let pieChart = null
 let overviewMap = null
 let overviewLayer = null
 let stackedChart = null
+let comparisonPieChart = null
+let comparisonChart = null
 const activeTab = ref('map')
+
+// 添加縣市比較數據
+const counties = [
+    '台北市', '新北市', '桃園市', '台中市', '台南市', '高雄市', '基隆市', '新竹市', '嘉義市',
+    '新竹縣', '苗栗縣', '彰化縣', '南投縣', '雲林縣', '嘉義縣', '屏東縣', '宜蘭縣', '花蓮縣', '台東縣', '澎湖縣'
+]
+
+const countyData = {
+    sites: [150, 280, 200, 320, 250, 300, 80, 120, 90, 140, 160, 180, 120, 320, 150, 200, 100, 80, 60, 40],
+    power: [75000, 140000, 100000, 160000, 125000, 150000, 40000, 60000, 45000, 70000, 80000, 90000, 60000, 158000, 75000, 100000, 50000, 40000, 30000, 20000]
+}
 
 function toggleAll() {
     const expand = !isAllExpanded.value
@@ -116,6 +140,7 @@ function goBack() {
         renderPieChart()
         renderStackedChart()
         renderOverviewMap()
+        renderComparisonPieChart()
     })
 }
 
@@ -428,6 +453,177 @@ async function renderOverviewMap() {
     }
 }
 
+function renderComparisonPieChart() {
+    const ctx = document.getElementById('comparisonPieChart')
+    if (comparisonPieChart) comparisonPieChart.destroy()
+
+    comparisonPieChart = new window.Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: counties,
+            datasets: [{
+                data: countyData.power,
+                backgroundColor: counties.map(() => `hsl(${Math.random() * 360}, 70%, 70%)`)
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '各縣市發電容量佔比',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: {
+                        top: 5,
+                        bottom: 10
+                    }
+                },
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15,
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                datalabels: {
+                    color: '#333',
+                    textAlign: 'center',
+                    font: {
+                        size: 11,
+                        weight: 'bold'
+                    },
+                    formatter: (value, ctx) => {
+                        const total = countyData.power.reduce((a, b) => a + b, 0)
+                        const percentage = ((value / total) * 100).toFixed(1)
+                        return `${percentage}%`
+                    },
+                    display: function(context) {
+                        const value = context.dataset.data[context.dataIndex]
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0)
+                        const percentage = (value / total) * 100
+                        return percentage > 2
+                    }
+                }
+            }
+        }
+    })
+}
+
+function renderComparisonChart() {
+    const ctx = document.getElementById('comparisonChart')
+    if (comparisonChart) comparisonChart.destroy()
+
+    comparisonChart = new window.Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: counties,
+            datasets: [
+                {
+                    label: '案場數量',
+                    data: countyData.sites,
+                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: '發電容量 (kW)',
+                    data: countyData.power,
+                    backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    borderWidth: 1,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '台灣各縣市光電案場比較',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: {
+                        top: 5,
+                        bottom: 10
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    padding: 10
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toLocaleString();
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: '案場數量',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        stepSize: 50
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: '發電容量 (kW)',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        stepSize: 50000
+                    }
+                }
+            }
+        }
+    })
+}
+
 onMounted(() => {
     const script = document.createElement('script')
     script.src = 'https://cdn.jsdelivr.net/npm/chart.js'
@@ -439,6 +635,8 @@ onMounted(() => {
             renderPieChart()
             renderStackedChart()
             renderOverviewMap()
+            renderComparisonPieChart()
+            renderComparisonChart()
         }
         document.head.appendChild(datalabelsScript)
     }
@@ -735,5 +933,33 @@ h2 {
 .back-btn:hover {
     background-color: #026d6d;
     transform: translateY(-1px);
+}
+
+.comparison-container {
+    width: 100%;
+    height: calc(100vh - 200px);
+    padding: 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.comparison-row {
+    display: flex;
+    height: 100%;
+    gap: 20px;
+}
+
+.comparison-row .chart-wrapper {
+    flex: 1;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.comparison-row .chart {
+    width: 100%;
+    height: 100%;
 }
 </style>
