@@ -504,21 +504,32 @@ onMounted(() => {
 
 /*footer*/
 .footer {
+  position: fixed;
+  bottom: 0px;
   width: 100%;
   background-color: #038686;
+  color: white;
+  text-align: center;
+  z-index: 1000;
   height: 50px;
-  line-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .fo {
   max-width: 95%;
-  margin: 0px auto;
+  margin: 0;
   color: #f7f5ed;
 }
 
 .footer_logo {
-  margin: 0px auto;
+  margin: 0;
   text-align: center;
+}
+
+.footer_logo p {
+  margin: 0;
 }
 
 a {

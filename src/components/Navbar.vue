@@ -8,10 +8,10 @@
           <RouterLink to="/" class="nav-link">首頁</RouterLink>
         </li>
         <li class="navItem">
-          <RouterLink to="/Map" class="nav-link active" aria-current="page">地圖</RouterLink>
+          <RouterLink to="/Map" class="nav-link">地圖</RouterLink>
         </li>
         <li class="navItem">
-          <RouterLink to="/powerinfo" class="nav-link active" aria-current="page">綠能統計</RouterLink>
+          <RouterLink to="/powerinfo" class="nav-link">綠能統計</RouterLink>
         </li>
         <li class="navItem">
           <RouterLink to="/about" class="nav-link">合作單位</RouterLink>
@@ -27,6 +27,11 @@
   </header>
 </template>
 
+<script>
+export default {
+  name: 'Navbar'
+}
+</script>
 
 <style scoped>
 *,
@@ -78,13 +83,20 @@ header {
   z-index: 999;
   text-align: center;
   background-color: #038686;
-  -webkit-box-shadow: 0px 2px 12px 0px rgba(0, 0, 0, 0.1);
-  -moz-box-shadow: 0px 2px 12px 0px rgba(0, 0, 0, 0.1);
   box-shadow: 0px 2px 12px 0px rgba(0, 0, 0, 0.1);
 }
-.navbarBrand:hover{
+
+.navbarBrand {
+  color: #F7F5ED;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 60px;
+}
+
+.navbarBrand:hover {
   color: #F7F5ED;
 }
+
 .nav {
   position: absolute;
   top: 100%;
@@ -96,7 +108,8 @@ header {
   z-index: 1;
   text-align: center;
 }
-.navList{
+
+.navList {
   width: 100%;
 }
 
@@ -110,9 +123,7 @@ header {
 }
 
 .navbarToggle:checked~.nav .navItem {
-  /*只有開啟時 delay .15s */
   transition: opacity 0.2s ease-out 0.15s;
-  /*開啟時透明度為1*/
   opacity: 1;
 }
 
@@ -153,16 +164,8 @@ header {
   bottom: 8px;
 }
 
-.navbarBrand {
-  color: #F7F5ED;
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 60px;
-}
-
 .navItem {
   margin: 1.4rem 0;
-  /*預設透明度 0*/
   opacity: 0;
   text-align: center;
 }
@@ -170,7 +173,8 @@ header {
 .nav-link {
   color: #038686;
 }
-.nav-link:hover{
+
+.nav-link:hover {
   color: #000;
 }
 
@@ -178,17 +182,10 @@ header {
 .navbar-light .navItem .nav-link:active,
 .navbar-light .navItem .nav-link:focus,
 .navbar-light .navItem:hover .nav-link {
-    color: #000;
+  color: #000;
 }
 
-
 @media screen and (min-width: 850px) {
-  .action {
-    font-size: 1.2rem;
-    padding: 0.75rem 2rem;
-  }
-
-  /*Main Header*/
   header {
     display: grid;
     grid-template-columns: 1fr auto minmax(600px, 3fr) 1fr;

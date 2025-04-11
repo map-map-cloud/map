@@ -59,7 +59,7 @@
       <div class="introduce-features">
         <div class="feature-card">
           <div class="feature-icon">
-            <font-awesome-icon icon="leaf" />
+            <font-awesome-icon :icon="['fas', 'leaf']" />
           </div>
           <h3>農業效益</h3>
           <p>提高農產品品質和產量，優化種植策略</p>
@@ -67,7 +67,7 @@
         
         <div class="feature-card">
           <div class="feature-icon">
-            <font-awesome-icon icon="solar-panel" />
+            <font-awesome-icon :icon="['fas', 'sun']" />
           </div>
           <h3>能源整合</h3>
           <p>最大化能源利用效率，降低營運成本</p>
@@ -75,7 +75,7 @@
         
         <div class="feature-card">
           <div class="feature-icon">
-            <font-awesome-icon icon="chart-line" />
+            <font-awesome-icon :icon="['fas', 'chart-line']" />
           </div>
           <h3>數據分析</h3>
           <p>精準掌握能源潛力，制定最佳策略</p>
@@ -429,17 +429,29 @@ export default {
 .feature-icon {
   width: 80px;
   height: 80px;
-  background: #038686;
+  background: linear-gradient(135deg, #038686, #026d6d);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(3, 134, 134, 0.2);
 }
 
 .feature-icon svg {
-  font-size: 2rem;
+  font-size: 2.5rem;
   color: white;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover .feature-icon {
+  transform: translateY(-5px) rotate(5deg);
+  box-shadow: 0 6px 20px rgba(3, 134, 134, 0.3);
+}
+
+.feature-card:hover .feature-icon svg {
+  transform: scale(1.1);
 }
 
 .feature-card h3 {

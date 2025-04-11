@@ -6,6 +6,9 @@ import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 import { faHouse } from '@fortawesome/free-solid-svg-icons'
+import { faLeaf } from '@fortawesome/free-solid-svg-icons'
+import { faSun } from '@fortawesome/free-solid-svg-icons'
+import { faChartLine } from '@fortawesome/free-solid-svg-icons'
 import { faFacebook } from '@fortawesome/free-brands-svg-icons'
 import { faTwitter } from '@fortawesome/free-brands-svg-icons'
 import { faYoutube } from '@fortawesome/free-brands-svg-icons'
@@ -19,15 +22,14 @@ import VueAxios from 'vue-axios'
 
 const app = createApp(App)
 
-app.component( FontAwesomeIcon)
+app.component('font-awesome-icon', FontAwesomeIcon)
 
 app.use(router)
 app.use(VueAxios, axios)
 
 app.mount('#app')
 
-app.component('font-awesome-icon', FontAwesomeIcon)
-library.add(faEnvelope, faArrowRight, faFacebook, faTwitter, faYoutube, faHouse, faArrowLeft)
+library.add(faEnvelope, faArrowRight, faFacebook, faTwitter, faYoutube, faHouse, faArrowLeft, faLeaf, faSun, faChartLine)
 
 export const handler = async (event) => {
   const response = {
