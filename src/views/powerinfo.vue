@@ -283,7 +283,7 @@ async function updateMapForArea(areaName) {
     if (geojsonLayer) map.removeLayer(geojsonLayer)
 
     try {
-        const res = await fetch('http://192.168.31.230/geo/yunlin-townships.geojson')
+        const res = await fetch('/geo/yunlin-townships.geojson')
         const data = await res.json()
 
         // 獲取鄉鎮市資料
