@@ -55,9 +55,9 @@ export default {
 
 <style scoped>
 .about {
-  max-width: 1200px;
+  /* max-width: 1200px; */
   margin: 0 auto;
-  padding: 4rem 2rem;
+  /* padding: 4rem 2rem; */
   background: #fff;
 }
 
