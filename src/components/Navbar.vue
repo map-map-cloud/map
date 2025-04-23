@@ -1,23 +1,23 @@
 <template>
   <header>
     <RouterLink to="/" class="navbarBrand">綠能下的數位地圖</RouterLink>
-    <input type="checkbox" class="navbarToggle" id="navbarToggle" />
+    <input type="checkbox" class="navbarToggle" id="navbarToggle" v-model="isMenuOpen" />
     <nav class="nav navbar-light">
       <ul class="navList">
         <li class="navItem">
-          <RouterLink to="/" class="nav-link">首頁</RouterLink>
+          <RouterLink to="/" class="nav-link" @click="closeMenu">首頁</RouterLink>
         </li>
         <li class="navItem">
-          <RouterLink to="/Map" class="nav-link">地圖</RouterLink>
+          <RouterLink to="/Map" class="nav-link" @click="closeMenu">地圖</RouterLink>
         </li>
         <li class="navItem">
-          <RouterLink to="/powerinfo" class="nav-link">綠能統計</RouterLink>
+          <RouterLink to="/powerinfo" class="nav-link" @click="closeMenu">綠能統計</RouterLink>
         </li>
         <li class="navItem">
-          <RouterLink to="/about" class="nav-link">合作單位</RouterLink>
+          <RouterLink to="/about" class="nav-link" @click="closeMenu">合作單位</RouterLink>
         </li>
         <li class="navItem">
-          <RouterLink to="/aboutme" class="nav-link">關於我們</RouterLink>
+          <RouterLink to="/aboutme" class="nav-link" @click="closeMenu">關於我們</RouterLink>
         </li>
       </ul>
     </nav>
@@ -29,7 +29,17 @@
 
 <script>
 export default {
-  name: 'Navbar'
+  name: 'Navbar',
+  data() {
+    return {
+      isMenuOpen: false
+    }
+  },
+  methods: {
+    closeMenu() {
+      this.isMenuOpen = false;
+    }
+  }
 }
 </script>
 

@@ -55,10 +55,11 @@ export default {
 
 <style scoped>
 .about {
-  /* max-width: 1200px; */
   margin: 0 auto;
-  /* padding: 4rem 2rem; */
   background: #fff;
+  max-width: 100%;
+  overflow-x: hidden;
+  height: 100%;
 }
 
 .aboutA {
@@ -66,6 +67,9 @@ export default {
   opacity: 0;
   transform: translateY(40px);
   animation: fadeInUp 0.8s ease-out forwards;
+  max-width: 100%;
+  padding: 0 20px;
+  overflow: visible;
 }
 
 .aboutA:nth-child(even) {
@@ -100,8 +104,10 @@ export default {
   gap: 60px;
   align-items: center;
   margin: 40px auto;
-  max-width: 1000px;
+  max-width: 100%;
   position: relative;
+  padding: 0 20px;
+  overflow: visible;
 }
 
 .aboutAImg {
@@ -178,9 +184,7 @@ hr {
 }
 
 @media (max-width: 968px) {
-  .about {
-    padding: 2rem 1.5rem;
-  }
+
 
   .aboutA {
     margin: 60px auto;
@@ -212,10 +216,29 @@ hr {
   }
 }
 
-@media (max-width: 480px) {
-  .about {
-    padding: 1.5rem 1rem;
+@media (max-width: 768px) {
+  .aboutAInf {
+    flex-direction: column;
+    gap: 30px;
   }
+
+  .aboutAImg {
+    width: 100%;
+    height: 300px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .aboutAtext {
+    width: 100%;
+    padding: 1.5rem;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+
 
   .aboutA {
     margin: 40px auto;
@@ -223,6 +246,10 @@ hr {
 
   .aboutAImg {
     height: 250px;
+    min-height: 250px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 
   .aboutAtext {

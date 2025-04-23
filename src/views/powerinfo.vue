@@ -933,6 +933,7 @@ onMounted(() => {
     overflow: hidden;
     width: 100%;
     max-width: 100vw;
+    margin: 0 auto;
 }
 
 .sidebar {
@@ -1407,5 +1408,157 @@ h2 {
 .chart {
     width: 100%;
     height: 100%;
+}
+
+/* 響應式設計 */
+@media screen and (max-width: 768px) {
+    .power-info {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 50vh;
+        border-right: none;
+        border-bottom: 1px solid #eee;
+    }
+
+    .content {
+        width: 100%;
+        height: auto;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .tabs button {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+
+    .overview-section {
+        margin-top: 10px;
+    }
+
+    .overview-map {
+        height: 50vh;
+        margin-top: 10px;
+    }
+
+    .charts-container {
+        height: auto;
+        padding: 10px;
+    }
+
+    .charts-row {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .chart-wrapper {
+        height: 500vh;
+        margin-bottom: 20px;
+    }
+
+    .comparison-container {
+        height: auto;
+        padding: 10px;
+    }
+
+    .comparison-row {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .stats-container {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .stat-card {
+        padding: 15px;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 2em;
+    }
+
+    .stat-content h3 {
+        font-size: 0.9em;
+    }
+
+    .stat-value {
+        font-size: 1.2em;
+    }
+
+    .table-container {
+        padding: 10px;
+    }
+
+    .data-table {
+        font-size: 14px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px 10px;
+    }
+
+    .state-filter {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .state-filter button {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    h2 {
+        font-size: 20px;
+        margin: 10px;
+    }
+
+    .back-btn {
+        margin: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .sidebar {
+        max-height: 40vh;
+    }
+
+    .chart-wrapper {
+        height: 500vh;
+    }
+
+    .stat-card {
+        padding: 10px;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.5em;
+    }
+
+    .stat-content h3 {
+        font-size: 0.8em;
+    }
+
+    .stat-value {
+        font-size: 1.1em;
+    }
 }
 </style>
