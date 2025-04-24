@@ -287,7 +287,7 @@ async function updateMapForArea(areaName) {
         const data = await res.json()
 
         // 獲取鄉鎮市資料
-        const response = await fetch('https://soezsell.com/test-map/info.php?state_stats=%E9%9B%B2%E6%9E%97%E7%B8%A3')
+        const response = await fetch('https://soezsell.com/test-map/info.php?County=%E9%9B%B2%E6%9E%97%E7%B8%A3')
         const townData = await response.json()
         
         // 建立鄉鎮市資料映射，只使用已併聯的數據
@@ -597,18 +597,76 @@ async function renderOverviewMap() {
     try {
         const res = await fetch('/geo/yunlin-townships.geojson')
         const geo = await res.json()
+        
+        // 獲取發電容量數據
+        const response = await fetch('https://soezsell.com/test-map/info.php?County=%E9%9B%B2%E6%9E%97%E7%B8%A3')
+        const townData = await response.json()
+        
+        // 建立鄉鎮市資料映射
         const powerData = {}
+        let maxPower = 0
+        
+        townData.forEach(item => {
+            if (item.State === '已併聯') {
+                const power = parseFloat(item.CapacityValNow)
+                powerData[item.Town] = power
+                if (power > maxPower) maxPower = power
+            }
+        })
+
+        // 顏色計算函數
+        const getColor = (power) => {
+            const intensity = power / maxPower
+            return `rgba(0, 0, 121, ${0.3 + intensity * 0.6})`
+        }
 
         if (overviewLayer) overviewMap.removeLayer(overviewLayer)
         overviewLayer = L.geoJSON(geo, {
             style: feature => {
-                const color = `hsl(${Math.random() * 360}, 80%, 80%)`
+                const townName = feature.properties.town
+                const power = powerData[townName] || 0
                 return {
                     color: '#ccc',
-                    fillColor: color,
+                    fillColor: getColor(power),
                     fillOpacity: 0.3,
                     weight: 1
                 }
+            },
+            onEachFeature: (feature, layer) => {
+                const townName = feature.properties.town
+                const power = powerData[townName] || 0
+                
+                layer.on('click', function (e) {
+                    // 重置所有區域的樣式
+                    overviewLayer.eachLayer(l => {
+                        const town = l.feature.properties.town
+                        const townPower = powerData[town] || 0
+                        l.setStyle({
+                            color: '#ccc',
+                            fillColor: getColor(townPower),
+                            fillOpacity: 0.3,
+                            weight: 1
+                        })
+                    })
+                    
+                    // 設置被點擊區域的樣式
+                    layer.setStyle({
+                        color: '#000079',
+                        fillColor: getColor(power),
+                        fillOpacity: 0.6,
+                        weight: 3
+                    })
+                    
+                    const popup = L.popup()
+                        .setLatLng(e.latlng)
+                        .setContent(`
+                            <div style="text-align: center;">
+                                <h4 style="margin: 0; color: #000079;">${townName}</h4>
+                                <p style="margin: 5px 0;">發電容量: ${power.toLocaleString()} kW</p>
+                            </div>
+                        `)
+                        .openOn(overviewMap)
+                })
             }
         }).addTo(overviewMap)
 
