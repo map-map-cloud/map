@@ -56,11 +56,15 @@
                     <div v-show="activeTab === 'chart'" class="charts-container">
                         <div class="charts-row">
                             <div class="chart-wrapper">
+                                <div id="powerDistributionMap" class="power-distribution-map"></div>
+                            </div>
+                            <div class="chart-wrapper">
                                 <canvas id="myPieChart" class="chart"></canvas>
                             </div>
                             <div class="chart-wrapper">
                                 <canvas id="myStackedChart" class="chart"></canvas>
                             </div>
+
                         </div>
                     </div>
                     <div v-show="activeTab === 'comparison'" class="comparison-container">
@@ -153,31 +157,36 @@
                             <table class="crop-table">
                                 <thead>
                                     <tr>
-                                        <th @click="sortTable('crop_name')" :class="{ 'sorted': sortKey === 'crop_name' }">
+                                        <th @click="sortTable('crop_name')"
+                                            :class="{ 'sorted': sortKey === 'crop_name' }">
                                             作物名稱
                                             <span class="sort-icon" v-if="sortKey === 'crop_name'">
                                                 {{ sortOrder === 'asc' ? '▲' : '▼' }}
                                             </span>
                                         </th>
-                                        <th @click="sortTable('planting_area')" :class="{ 'sorted': sortKey === 'planting_area' }">
+                                        <th @click="sortTable('planting_area')"
+                                            :class="{ 'sorted': sortKey === 'planting_area' }">
                                             種植面積(公頃)
                                             <span class="sort-icon" v-if="sortKey === 'planting_area'">
                                                 {{ sortOrder === 'asc' ? '▲' : '▼' }}
                                             </span>
                                         </th>
-                                        <th @click="sortTable('harvest_area')" :class="{ 'sorted': sortKey === 'harvest_area' }">
+                                        <th @click="sortTable('harvest_area')"
+                                            :class="{ 'sorted': sortKey === 'harvest_area' }">
                                             收穫面積(公頃)
                                             <span class="sort-icon" v-if="sortKey === 'harvest_area'">
                                                 {{ sortOrder === 'asc' ? '▲' : '▼' }}
                                             </span>
                                         </th>
-                                        <th @click="sortTable('yield_per_hectare')" :class="{ 'sorted': sortKey === 'yield_per_hectare' }">
+                                        <th @click="sortTable('yield_per_hectare')"
+                                            :class="{ 'sorted': sortKey === 'yield_per_hectare' }">
                                             每公頃產量(公斤)
                                             <span class="sort-icon" v-if="sortKey === 'yield_per_hectare'">
                                                 {{ sortOrder === 'asc' ? '▲' : '▼' }}
                                             </span>
                                         </th>
-                                        <th @click="sortTable('total_yield')" :class="{ 'sorted': sortKey === 'total_yield' }">
+                                        <th @click="sortTable('total_yield')"
+                                            :class="{ 'sorted': sortKey === 'total_yield' }">
                                             總產量(公斤)
                                             <span class="sort-icon" v-if="sortKey === 'total_yield'">
                                                 {{ sortOrder === 'asc' ? '▲' : '▼' }}
@@ -242,6 +251,8 @@ const cropData = ref([])
 let cropYieldChart = null
 const sortKey = ref('total_yield')
 const sortOrder = ref('desc')
+let powerDistributionMap = null
+let powerDistributionLayer = null
 
 const filteredTownData = computed(() => {
     if (selectedState.value === '全部') {
@@ -292,11 +303,14 @@ watch(activeTab, (newTab) => {
         nextTick(() => {
             if (overviewMap) {
                 overviewMap.invalidateSize()
-                // 如果有保存的視圖狀態，則恢復
                 if (lastMapView) {
                     overviewMap.setView(lastMapView.center, lastMapView.zoom)
                 }
             }
+        })
+    } else if (newTab === 'chart') {
+        nextTick(() => {
+            renderPowerDistributionMap()
         })
     } else if (overviewMap) {
         // 保存當前視圖狀態
@@ -1171,6 +1185,84 @@ function sortTable(key) {
     })
 }
 
+async function renderPowerDistributionMap() {
+    if (powerDistributionMap) {
+        powerDistributionMap.remove()
+    }
+    
+    powerDistributionMap = L.map('powerDistributionMap').setView([23.709, 120.431], 10)
+    
+    // 添加白色背景圖層
+    const whiteLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        className: 'white-tiles'
+    }).addTo(powerDistributionMap)
+
+    try {
+        const res = await fetch('/geo/yunlin-townships.geojson')
+        const geo = await res.json()
+        
+        // 獲取發電容量數據
+        const response = await fetch('https://soezsell.com/test-map/info.php?County=%E9%9B%B2%E6%9E%97%E7%B8%A3')
+        const townData = await response.json()
+        
+        // 建立鄉鎮市資料映射
+        const powerData = {}
+        let maxPower = 0
+        
+        townData.forEach(item => {
+            if (item.State === '已併聯') {
+                const power = parseFloat(item.CapacityValNow)
+                powerData[item.Town] = power
+                if (power > maxPower) maxPower = power
+            }
+        })
+
+        // 顏色計算函數 - 使用深綠色漸層
+        const getColor = (power) => {
+            const intensity = power / maxPower
+            return `rgba(3, 134, 134, ${0.2 + intensity * 0.8})`
+        }
+
+        if (powerDistributionLayer) powerDistributionMap.removeLayer(powerDistributionLayer)
+        powerDistributionLayer = L.geoJSON(geo, {
+            style: feature => {
+                const townName = feature.properties.town
+                const power = powerData[townName] || 0
+                return {
+                    color: '#666',
+                    fillColor: getColor(power),
+                    fillOpacity: 0.8,
+                    weight: 1
+                }
+            },
+            onEachFeature: (feature, layer) => {
+                const townName = feature.properties.town
+                const power = powerData[townName] || 0
+                
+                layer.bindTooltip(`
+                    <div style="text-align: center;">
+                        <strong>${townName}</strong><br>
+                        發電容量: ${power.toLocaleString()} kW
+                    </div>
+                `, {
+                    permanent: false,
+                    direction: 'center'
+                })
+            }
+        }).addTo(powerDistributionMap)
+
+        // 自動調整視圖以顯示整個雲林縣，並添加一些內邊距
+        const bounds = powerDistributionLayer.getBounds()
+        powerDistributionMap.fitBounds(bounds, {
+            padding: [10, 10],
+            maxZoom: 18
+        })
+    } catch (e) {
+        console.error('載入地圖資料錯誤', e)
+    }
+}
+
 onMounted(() => {
     const script = document.createElement('script')
     script.src = 'https://cdn.jsdelivr.net/npm/chart.js'
@@ -1182,6 +1274,7 @@ onMounted(() => {
             fetchTotalData()
             fetchYunlinData()
             renderOverviewMap()
+            renderPowerDistributionMap()
             fetchCountyData()
             fetchTownData()
         }
@@ -1276,6 +1369,7 @@ onMounted(() => {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
+    min-height: calc(100vh - 200px);
 }
 
 .overview-map {
@@ -1649,30 +1743,60 @@ h2 {
 
 .charts-container {
     width: 100%;
-    height: calc(100vh - 200px);
+    height: 100%;
+    min-height: calc(100vh - 200px);
     padding: 20px;
-    overflow: hidden;
+    overflow: auto;
+    display: flex;
+    flex-direction: inherit;
 }
 
 .charts-row {
     display: flex;
-    height: 100%;
+    min-height: 400px;
     gap: 20px;
     width: 100%;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 .chart-wrapper {
-    flex: 1;
+    flex: 0 0 calc(50% - 10px);
     min-width: 0;
     background: white;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    position: relative;
+    height: 400px;
 }
 
 .chart {
     width: 100%;
     height: 100%;
+}
+
+.charts-row.map-row {
+    min-height: 400px;
+    margin-top: 20px;
+}
+
+.charts-row.map-row .chart-wrapper {
+    flex: 0 0 100%;
+    max-width: none;
+    padding: 0;
+    border-radius: 0;
+    height: 400px;
+}
+
+.power-distribution-map {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 .content-wrapper {
@@ -1810,18 +1934,23 @@ h2 {
 @media screen and (max-width: 768px) {
     .power-info {
         flex-direction: column;
+        height: auto;
+        overflow: visible;
     }
 
     .sidebar {
         width: 100%;
         height: auto;
-        max-height: 50vh;
+        max-height: 40vh;
         border-right: none;
         border-bottom: 1px solid #eee;
+        padding: 10px;
     }
 
     .content {
         width: 100%;
+        height: auto;
+        overflow: visible;
     }
 
     .content-wrapper {
@@ -1835,98 +1964,98 @@ h2 {
 
     .map-container {
         width: 100%;
-        height: 300px;
-        margin-bottom: 10px;
-        position: relative;
-    }
-
-    .map {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        height: 400px !important;
+        margin-bottom: 20px;
     }
 
     .crop-charts-container {
         width: 100%;
-        height: 300px;
-        padding: 10px;
-        position: relative;
-    }
-
-    .crop-chart-wrapper {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+        height: 400px !important;
         padding: 10px;
     }
 
-    .crop-chart {
-        width: 100% !important;
-        height: 100% !important;
+    .chart-wrapper {
+        flex: 1;
+        height: 400px !important;
+        margin-bottom: 20px;
+        min-height: unset;
     }
 
-    .crop-data-section {
-        width: 100%;
+    .overview-map {
+        height: 400px !important;
+        margin-top: 10px;
     }
 
-    .crop-table {
-        font-size: 14px;
-    }
-
-    .crop-table th,
-    .crop-table td {
-        padding: 8px;
-    }
-
-    .sort-icon {
-        font-size: 10px;
-    }
-
-    .section-title {
-        font-size: 1.2em;
-        margin-bottom: 15px;
-    }
-
-    .stats-container {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        padding: 10px;
-    }
-
-    .stat-card {
-        padding: 10px;
-    }
-
-    .stat-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 1.5em;
-    }
-
-    .stat-content h3 {
-        font-size: 0.9em;
-    }
-
-    .stat-value {
-        font-size: 1.1em;
-    }
-
-    h2 {
-        font-size: 1.2em;
-        margin: 10px 0;
+    .comparison-row .chart-wrapper {
+        height: 400px !important;
+        margin-bottom: 20px;
     }
 
     .tabs {
         padding: 10px;
+        flex-wrap: nowrap;
+        gap: 5px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
     }
 
     .tabs button {
-        font-size: 0.9em;
-        padding: 8px 12px;
+        font-size: 0.8em;
+        padding: 8px 10px;
+        flex: 0 0 auto;
+        white-space: nowrap;
+        min-width: auto;
+    }
+
+    .charts-container {
+        min-height: auto;
+        height: auto;
+    }
+
+    .charts-row {
+        display: block;
+        height: auto;
+        margin-bottom: 20px;
+        min-height: unset;
+    }
+
+    .comparison-container {
+        height: auto;
+        padding: 10px;
+    }
+
+    .comparison-row {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .table-container {
+        padding: 10px;
+    }
+
+    .data-table {
+        font-size: 14px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px;
+    }
+
+    .state-filter {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .state-filter button {
+        flex: 1 1 calc(50% - 10px);
+        min-width: 100px;
     }
 }
 
@@ -1937,7 +2066,22 @@ h2 {
 
     .map-container,
     .crop-charts-container {
-        height: 250px;
+        height: 300px !important;
+    }
+
+    .chart-wrapper {
+        height: 300px !important;
+        min-height: unset;
+    }
+
+    .tabs button {
+        font-size: 0.75em;
+        padding: 6px 8px;
+        flex: 0 0 auto;
+    }
+
+    .state-filter button {
+        flex: 1 1 100%;
     }
 
     .crop-table {
@@ -1948,5 +2092,57 @@ h2 {
     .crop-table td {
         padding: 6px;
     }
+
+    .back-btn {
+        width: 100%;
+        margin: 10px;
+    }
+
+    h2 {
+        font-size: 20px;
+        margin: 15px 0;
+    }
+
+    .section-title {
+        font-size: 18px;
+    }
+
+    .overview-map {
+        height: 300px !important;
+    }
+
+    .comparison-row .chart-wrapper {
+        height: 300px !important;
+    }
+}
+
+/* 添加觸控優化 */
+@media (hover: none) {
+    .category li:hover {
+        background-color: transparent;
+        padding-left: 15px;
+    }
+
+    .stat-card:hover {
+        transform: none;
+    }
+
+    .back-btn:hover {
+        transform: none;
+    }
+
+    .tabs button:hover {
+        color: inherit;
+    }
+
+    .tabs button.active {
+        color: #038686;
+    }
+}
+
+/* 添加白色圖層樣式 */
+:deep(.white-tiles) {
+    filter: brightness(0) invert(1);
+    opacity: 0.5;
 }
 </style>
