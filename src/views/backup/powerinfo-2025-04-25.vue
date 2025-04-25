@@ -136,68 +136,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="content-wrapper">
-                    <div class="map-chart-container">
-                        <div class="map-container">
-                            <div id="map" class="map"></div>
-                        </div>
-                        <div class="crop-charts-container">
-                            <div class="crop-chart-wrapper">
-                                <canvas id="cropYieldChart" class="crop-chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="crop-data-section" v-if="cropData.length > 0">
-                        <h3 class="section-title">農作物產量資料</h3>
-                        <div class="crop-table-container">
-                            <table class="crop-table">
-                                <thead>
-                                    <tr>
-                                        <th @click="sortTable('crop_name')" :class="{ 'sorted': sortKey === 'crop_name' }">
-                                            作物名稱
-                                            <span class="sort-icon" v-if="sortKey === 'crop_name'">
-                                                {{ sortOrder === 'asc' ? '▲' : '▼' }}
-                                            </span>
-                                        </th>
-                                        <th @click="sortTable('planting_area')" :class="{ 'sorted': sortKey === 'planting_area' }">
-                                            種植面積(公頃)
-                                            <span class="sort-icon" v-if="sortKey === 'planting_area'">
-                                                {{ sortOrder === 'asc' ? '▲' : '▼' }}
-                                            </span>
-                                        </th>
-                                        <th @click="sortTable('harvest_area')" :class="{ 'sorted': sortKey === 'harvest_area' }">
-                                            收穫面積(公頃)
-                                            <span class="sort-icon" v-if="sortKey === 'harvest_area'">
-                                                {{ sortOrder === 'asc' ? '▲' : '▼' }}
-                                            </span>
-                                        </th>
-                                        <th @click="sortTable('yield_per_hectare')" :class="{ 'sorted': sortKey === 'yield_per_hectare' }">
-                                            每公頃產量(公斤)
-                                            <span class="sort-icon" v-if="sortKey === 'yield_per_hectare'">
-                                                {{ sortOrder === 'asc' ? '▲' : '▼' }}
-                                            </span>
-                                        </th>
-                                        <th @click="sortTable('total_yield')" :class="{ 'sorted': sortKey === 'total_yield' }">
-                                            總產量(公斤)
-                                            <span class="sort-icon" v-if="sortKey === 'total_yield'">
-                                                {{ sortOrder === 'asc' ? '▲' : '▼' }}
-                                            </span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="crop in sortedCropData" :key="crop.crop_code">
-                                        <td>{{ crop.crop_name }}</td>
-                                        <td>{{ parseFloat(crop.planting_area).toLocaleString() }}</td>
-                                        <td>{{ parseFloat(crop.harvest_area).toLocaleString() }}</td>
-                                        <td>{{ parseFloat(crop.yield_per_hectare).toLocaleString() }}</td>
-                                        <td>{{ parseFloat(crop.total_yield).toLocaleString() }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                <div id="map" class="map"></div>
             </div>
         </div>
     </div>
@@ -238,52 +177,12 @@ let lastMapView = null
 const townData = ref([])
 const selectedState = ref('全部')
 const states = ref(['全部', '已併聯', '施工中', '申請中'])
-const cropData = ref([])
-let cropYieldChart = null
-const sortKey = ref('total_yield')
-const sortOrder = ref('desc')
 
 const filteredTownData = computed(() => {
     if (selectedState.value === '全部') {
         return townData.value
     }
     return townData.value.filter(item => item.State === selectedState.value)
-})
-
-// 修改 sortedCropData 計算屬性
-const sortedCropData = computed(() => {
-    return [...cropData.value].sort((a, b) => {
-        let valueA, valueB
-        if (sortKey.value === 'crop_name') {
-            valueA = a[sortKey.value]
-            valueB = b[sortKey.value]
-            if (sortOrder.value === 'asc') {
-                return valueA.localeCompare(valueB, 'zh-TW')
-            } else {
-                return valueB.localeCompare(valueA, 'zh-TW')
-            }
-        } else {
-            valueA = parseFloat(a[sortKey.value])
-            valueB = parseFloat(b[sortKey.value])
-            if (sortOrder.value === 'asc') {
-                return valueA > valueB ? 1 : -1
-            } else {
-                return valueA < valueB ? 1 : -1
-            }
-        }
-    })
-})
-
-// 修改 topTwentyCrops 計算屬性
-const topTwentyCrops = computed(() => {
-    return sortedCropData.value.slice(0, 20)
-})
-
-// 監聽 topTwentyCrops 的變化
-watch(topTwentyCrops, () => {
-    nextTick(() => {
-        renderCropYieldChart()
-    })
 })
 
 // 監聽 activeTab 的變化
@@ -338,7 +237,6 @@ async function selectArea(area) {
     selectedArea.value = area
     nextTick(async () => {
         try {
-            // 獲取發電資料
             const response = await fetch('https://soezsell.com/test-map/info.php?state_stats=%E9%9B%B2%E6%9E%97%E7%B8%A3')
             const data = await response.json()
             
@@ -358,17 +256,6 @@ async function selectArea(area) {
                     application: applicationInfo ? parseInt(applicationInfo.Count) : 0
                 }
             }
-
-            // 獲取農作物資料
-            const encodedTown = encodeURIComponent(area)
-            const cropResponse = await fetch(`https://map.soezsell.com/api_cropData.php?year=111&town=${encodedTown}`)
-            const cropDataResult = await cropResponse.json()
-            cropData.value = cropDataResult
-            
-            // 渲染農作物產量圖表
-            nextTick(() => {
-                renderCropYieldChart()
-            })
             
             // 每次點擊都重新初始化地圖
             if (map) {
@@ -377,7 +264,7 @@ async function selectArea(area) {
             initMap()
             await updateMapForArea(area)
         } catch (error) {
-            console.error('無法獲取資料:', error)
+            console.error('無法獲取鄉鎮資料:', error)
         }
     })
 }
@@ -440,10 +327,10 @@ async function updateMapForArea(areaName) {
 
             // 調整地圖視圖
             const bounds = L.geoJSON(selectedFeature).getBounds()
-            const center = bounds.getCenter()
-            // 將中心點向上移動
-            center.lat -= 0.02 // 約50px的距離
-            map.setView(center, 12) // 增加縮放級別
+            map.fitBounds(bounds, {
+                padding: [10, 10],
+                maxZoom: 18
+            })
         }
 
         // 更新選中區域的統計資料
@@ -1077,100 +964,6 @@ async function fetchTownData() {
     }
 }
 
-// 修改渲染農作物產量圖表的函數
-function renderCropYieldChart() {
-    const ctx = document.getElementById('cropYieldChart')
-    if (cropYieldChart) cropYieldChart.destroy()
-
-    const crops = topTwentyCrops.value
-    const labels = crops.map(crop => crop.crop_name)
-    const data = crops.map(crop => parseFloat(crop.total_yield))
-
-    cropYieldChart = new window.Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: '總產量(公斤)',
-                data: data,
-                backgroundColor: 'rgba(3, 134, 134, 0.7)',
-                borderColor: 'rgba(3, 134, 134, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: '前二十農作物產量',
-                    font: {
-                        size: 16,
-                        weight: 'bold'
-                    },
-                    padding: {
-                        top: 10,
-                        bottom: 20
-                    }
-                },
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `總產量: ${context.raw.toLocaleString()} 公斤`
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 45,
-                        font: {
-                            size: 10
-                        }
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: '產量(公斤)',
-                        font: {
-                            weight: 'bold'
-                        }
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return value.toLocaleString()
-                        }
-                    }
-                }
-            }
-        }
-    })
-}
-
-function sortTable(key) {
-    if (sortKey.value === key) {
-        sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-    } else {
-        sortKey.value = key
-        sortOrder.value = 'desc'
-    }
-    // 重新渲染長條圖
-    nextTick(() => {
-        renderCropYieldChart()
-    })
-}
-
 onMounted(() => {
     const script = document.createElement('script')
     script.src = 'https://cdn.jsdelivr.net/npm/chart.js'
@@ -1675,141 +1468,11 @@ h2 {
     height: 100%;
 }
 
-.content-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 20px;
-    max-width: 100%;
-    margin: 0 auto;
-}
-
-.map-chart-container {
-    display: flex;
-    gap: 20px;
-    height: 400px;
-    width: 100%;
-}
-
-.map-container {
-    flex: 1;
-    height: 100%;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    position: relative;
-}
-
-.map {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.crop-charts-container {
-    flex: 1;
-    height: 100%;
-    padding: 20px;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    position: relative;
-}
-
-.crop-chart-wrapper {
-    position: absolute;
-    top: -10px;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    padding: 20px;
-}
-
-.crop-chart {
-    width: 100% !important;
-    height: 100% !important;
-}
-
-.crop-data-section {
-    width: 100%;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-}
-
-.section-title {
-    color: #038686;
-    font-size: 1.5em;
-    text-align: center;
-    margin-bottom: 20px;
-    font-weight: 600;
-}
-
-.crop-table-container {
-    overflow-x: auto;
-    margin-top: 20px;
-}
-
-.crop-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.crop-table th,
-.crop-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-}
-
-.crop-table th {
-    background-color: #038686;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    user-select: none;
-    position: relative;
-    padding-right: 25px;
-}
-
-.crop-table th:hover {
-    background-color: #026d6d;
-}
-
-.crop-table th.sorted {
-    background-color: #026d6d;
-}
-
-.sort-icon {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 12px;
-}
-
-.crop-table tr:hover {
-    background-color: rgba(3, 134, 134, 0.1);
-}
-
-.crop-table td {
-    color: #333;
-}
-
-.crop-table tr:last-child td {
-    border-bottom: none;
-}
-
+/* 響應式設計 */
 @media screen and (max-width: 768px) {
     .power-info {
         flex-direction: column;
+        height: auto;
     }
 
     .sidebar {
@@ -1822,79 +1485,120 @@ h2 {
 
     .content {
         width: 100%;
+        height: auto;
     }
 
-    .content-wrapper {
-        padding: 10px;
-    }
-
-    .map-chart-container {
-        flex-direction: column;
+    .tabs {
+        flex-wrap: wrap;
         gap: 10px;
-    }
-
-    .map-container {
-        width: 100%;
-        height: 300px;
-        margin-bottom: 10px;
-        position: relative;
-    }
-
-    .map {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-    }
-
-    .crop-charts-container {
-        width: 100%;
-        height: 300px;
-        padding: 10px;
-        position: relative;
-    }
-
-    .crop-chart-wrapper {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
         padding: 10px;
     }
 
-    .crop-chart {
-        width: 100% !important;
-        height: 100% !important;
-    }
-
-    .crop-data-section {
-        width: 100%;
-    }
-
-    .crop-table {
+    .tabs button {
+        padding: 8px 15px;
         font-size: 14px;
     }
 
-    .crop-table th,
-    .crop-table td {
-        padding: 8px;
+    .overview-section {
+        margin-top: 10px;
     }
 
-    .sort-icon {
-        font-size: 10px;
+    .overview-map {
+        height: 50vh;
+        margin-top: 10px;
     }
 
-    .section-title {
-        font-size: 1.2em;
-        margin-bottom: 15px;
+    .charts-container {
+        height: auto;
+        padding: 10px;
+    }
+
+    .charts-row {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .chart-wrapper {
+        height: 500vh;
+        margin-bottom: 20px;
+    }
+
+    .comparison-container {
+        height: auto;
+        padding: 10px;
+    }
+
+    .comparison-row {
+        flex-direction: column;
+        height: auto;
     }
 
     .stats-container {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
         gap: 10px;
         padding: 10px;
+    }
+
+    .stat-card {
+        padding: 15px;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 2em;
+    }
+
+    .stat-content h3 {
+        font-size: 0.9em;
+    }
+
+    .stat-value {
+        font-size: 1.2em;
+    }
+
+    .table-container {
+        padding: 10px;
+    }
+
+    .data-table {
+        font-size: 14px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 8px 10px;
+    }
+
+    .state-filter {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .state-filter button {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    h2 {
+        font-size: 20px;
+        margin: 10px;
+    }
+
+    .back-btn {
+        margin: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .sidebar {
+        max-height: 40vh;
+    }
+
+    .chart-wrapper {
+        height: 500vh;
     }
 
     .stat-card {
@@ -1908,45 +1612,11 @@ h2 {
     }
 
     .stat-content h3 {
-        font-size: 0.9em;
+        font-size: 0.8em;
     }
 
     .stat-value {
         font-size: 1.1em;
-    }
-
-    h2 {
-        font-size: 1.2em;
-        margin: 10px 0;
-    }
-
-    .tabs {
-        padding: 10px;
-    }
-
-    .tabs button {
-        font-size: 0.9em;
-        padding: 8px 12px;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    .stats-container {
-        grid-template-columns: 1fr;
-    }
-
-    .map-container,
-    .crop-charts-container {
-        height: 250px;
-    }
-
-    .crop-table {
-        font-size: 12px;
-    }
-
-    .crop-table th,
-    .crop-table td {
-        padding: 6px;
     }
 }
 </style>
