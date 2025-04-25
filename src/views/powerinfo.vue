@@ -1576,6 +1576,7 @@ h2 {
     background: white;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    height: 600px;
 }
 
 .comparison-row .chart {
@@ -1768,7 +1769,7 @@ h2 {
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     position: relative;
-    height: 400px;
+    height: 600px;
 }
 
 .chart {
@@ -1777,7 +1778,7 @@ h2 {
 }
 
 .charts-row.map-row {
-    min-height: 400px;
+    min-height: 600px;
     margin-top: 20px;
 }
 
@@ -1786,7 +1787,7 @@ h2 {
     max-width: none;
     padding: 0;
     border-radius: 0;
-    height: 400px;
+    height: 600px;
 }
 
 .power-distribution-map {
@@ -2032,7 +2033,7 @@ h2 {
 
     .comparison-row {
         flex-direction: column;
-        height: auto;
+        /* height: auto; */
     }
 
     .table-container {
