@@ -1240,6 +1240,14 @@ async function renderPowerDistributionMap() {
                 const townName = feature.properties.town
                 const power = powerData[townName] || 0
                 
+                // 添加永久標籤顯示發電容量
+                const center = layer.getBounds().getCenter()
+                const label = L.divIcon({
+                    className: 'power-label',
+                    html: `<div>${power.toLocaleString()} kW</div>`
+                })
+                L.marker(center, { icon: label }).addTo(powerDistributionMap)
+                
                 layer.bindTooltip(`
                     <div style="text-align: center;">
                         <strong>${townName}</strong><br>
@@ -1402,12 +1410,18 @@ h2 {
 
 .town-label {
     background: rgba(255, 255, 255, 0.8);
-    padding: 4px 6px;
-    border-radius: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
     font-size: 12px;
     text-align: center;
-    border: 1px solid #ccc;
-    color: #333;
+    border: 1px solid #038686;
+    color: #038686;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.power-label div {
+    white-space: nowrap;
 }
 
 .category {
