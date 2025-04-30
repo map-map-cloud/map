@@ -744,7 +744,7 @@ async function renderOverviewMap() {
         // 顏色計算函數
         const getColor = (power) => {
             const intensity = power / maxPower
-            return `rgba(0, 0, 121, ${0.3 + intensity * 0.6})`
+            return `rgba(59, 122, 236, ${0.3 + intensity * 0.6})`
         }
 
         if (overviewLayer) overviewMap.removeLayer(overviewLayer)
@@ -1221,7 +1221,7 @@ async function renderPowerDistributionMap() {
         // 顏色計算函數 - 使用深綠色漸層
         const getColor = (power) => {
             const intensity = power / maxPower
-            return `rgba(3, 134, 134, ${0.2 + intensity * 0.8})`
+            return `rgba(59, 122, 236, ${0.2 + intensity * 0.8})`
         }
 
         if (powerDistributionLayer) powerDistributionMap.removeLayer(powerDistributionLayer)
