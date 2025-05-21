@@ -3,7 +3,7 @@
     <!-- 資料選擇器 -->
     <div class="cardc scrollbar">
       <div class="other">
-        光電案場
+        其他光電案場
         <select id="dataSelect" class="form-control" v-model="selectedDataType" @change="fetchData">
           <option value="0">無</option>
           <optgroup label="農業">
@@ -25,32 +25,45 @@
       </div>
       <hr>
       <div class="search">
-        <input type="text" class="form-control" name="search" placeholder="搜尋青培站資訊" v-model="searchQuery">
+        <input type="text" class="form-control" name="search" placeholder="搜尋已登記場案" v-model="searchQuery">
       </div>
       <!-- 農場資訊卡片 -->
-      <div v-for="farm in filteredFarms" :key="farm.id" class="card" style="padding-bottom: 0px;" @click="focusOnLocation(farm.address)">
+      <div v-for="farm in filteredFarms" :key="farm.id" class="card" style="padding-bottom: 0px;">
         <div>
           <div class="h-d-flex h-mb-3 h-align-items-center">
             <h2 class="h-flex-1">
-              <a style="text-decoration: none; color: rgb(63, 63, 63); cursor: pointer;">
+              <a :href="`/Information/${farm.id}`" style="text-decoration: none; color: rgb(63, 63, 63);">
                 {{ farm.name }}
               </a>
             </h2>
           </div>
-          <p class="h5 h-text-dark" style="cursor: pointer;">
+          <p class="h5 h-text-dark" @click="focusOnLocation(farm.latitude, farm.longitude)"
+            style="cursor: pointer;">
             {{ farm.address }}
           </p>
+          <p class="h5 h-text-dark">{{ farm.phone || '未提供' }}</p>
           <div class="card-body">
-            <a :href="farm.website" class="card-body-t" target="_blank">
-              詳細資料 <font-awesome-icon :icon="['fas', 'arrow-right']" />
-            </a>
+            <RouterLink :to="`/Information/${farm.id}`" class="card-body-t">
+              詳細資料 <font-awesome-icon icon="fa-solid fa-arrow-right" />
+            </RouterLink>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- 其餘的模板代碼保持不變 -->
     <div class="mapContainer" ref="mapContainer">
-      <!-- 移除自訂圖層切換 UI -->
+      <div class="layer-select">
+        <button class="layer-icon" @click="toggleLayerMenu">
+          <span class="icon-letter">L</span>
+        </button>
+        <div v-if="isLayerMenuVisible" class="layer-dropdown">
+          <select id="layerSelect" class="form-control" v-model="selectedLayer" @change="changeLayer">
+            <option value="streets">街道圖層</option>
+            <option value="terrain">地形圖層</option>
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -64,7 +77,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { onMounted, ref, computed } from "vue";
 import L from "leaflet";
@@ -73,38 +85,20 @@ import "leaflet.markercluster/dist/leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import "leaflet-draw/dist/leaflet.draw.js";
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { faHouse, faArrowRight } from '@fortawesome/free-solid-svg-icons';
-
-library.add(faHouse, faArrowRight);
 
 // 地圖及資料初始化
 const farms = ref([]);
 const mapContainer = ref(null);
-const farmMarkers = L.markerClusterGroup({
-  iconCreateFunction: function(cluster) {
-    const count = cluster.getChildCount();
-    let size = 'small';
-    if (count > 100) {
-      size = 'large';
-    } else if (count > 10) {
-      size = 'medium';
-    }
-    return L.divIcon({
-      html: `<div><span>${count}</span></div>`,
-      className: `marker-cluster-youth marker-cluster-youth-${size}`,
-      iconSize: L.point(40, 40)
-    });
-  }
-});
+const farmMarkers = L.markerClusterGroup();
 const newMarkers = L.markerClusterGroup();
 const selectedDataType = ref(0);
-const searchQuery = ref('');
+const selectedLayer = ref('streets');
+const searchQuery = ref(''); // 新增搜尋查詢變數
 
 // 過濾農場資料的計算屬性
 const filteredFarms = computed(() => {
   if (!searchQuery.value) return farms.value;
+
   const query = searchQuery.value.toLowerCase();
   return farms.value.filter(farm =>
     farm.name.toLowerCase().includes(query)
@@ -113,40 +107,19 @@ const filteredFarms = computed(() => {
 
 // 自訂標記圖示
 let customIcon;
-let youthIcon;
 let map;
 
 // 獲取農場資料的函數
 const fetchFarms = async () => {
   try {
-    const response = await fetch('https://map.soezsell.com/api_youth_bases.php');
-    const result = await response.json();
-    
-    if (result.status === 'success') {
-      const farmsWithCoordinates = result.data.map((item) => {
-        return {
-          id: item.id,
-          name: item.base_name,
-          company_name: item.company_name,
-          address: `${item.county}${item.town}${item.address}`,
-          // phone: '',
-          latitude: parseFloat(item.latitude),
-          longitude: parseFloat(item.longitude),
-          website: item.website,
-          image_url: item.image_url
-        };
-      });
-      
-      farms.value = farmsWithCoordinates;
-      addFarmMarkers(farms.value);
-    } else {
-      console.error('API 回傳錯誤:', result);
-    }
+    const response = await fetch('https://soezsell.com/test-map/data.php');
+    const data = await response.json();
+    farms.value = data;
+    addFarmMarkers(data);
   } catch (error) {
     console.error('獲取資料時出錯:', error);
   }
 };
-
 // 獲取選擇器資料的函數
 const fetchData = async () => {
   const selectedValue = selectedDataType.value;
@@ -160,39 +133,24 @@ const fetchData = async () => {
   }
 };
 
-const farmMarkersMap = {};
-
 // 添加農場標記
 const addFarmMarkers = (farmData) => {
-  farmMarkers.clearLayers();
-  Object.keys(farmMarkersMap).forEach(key => delete farmMarkersMap[key]);
-
   farmData.forEach((farm) => {
-    if (farm.latitude && farm.longitude) {
-      const marker = L.marker([farm.latitude, farm.longitude], { 
-        icon: youthIcon
-      })
-        .bindPopup(`
-          <div class="pop" style="text-align:center;min-width:180px;">
-            <h3 style="font-size:1.15em;color:#1976d2;font-weight:bold;margin-bottom:6px;border-bottom:1.5px solid #90caf9;display:inline-block;padding:0 8px 2px 8px;">
-              ${farm.name}
-            </h3>
-            <div style="margin:8px 0;">
-              <img src="${farm.image_url}" alt="網站圖片" style="max-width:120px;max-height:80px;box-shadow:0 2px 8px #bbb;border-radius:10px;border:1.5px solid #e3f2fd;background:#fff;" />
-            </div>
-            <div style="color:#388e3c;font-weight:500;margin-bottom:2px;">${farm.company_name}</div>
-            <div style="color:#616161;font-size:0.95em;margin-bottom:8px;">${farm.address}</div>
-            <a href="${farm.website}" target="_blank" style="display:inline-block;padding:6px 16px;background:#1976d2;color:#fff;border-radius:20px;text-decoration:none;font-weight:500;box-shadow:0 2px 6px #90caf9;transition:background 0.2s;">
+    const marker = L.marker([farm.latitude, farm.longitude], { icon: customIcon })
+      .bindPopup(`
+        <div class="pop">
+          <h3>${farm.name}</h3>
+          <div>地址: ${farm.address}</div>
+          <div>電話: ${farm.phone || '未提供'}</div>
+          <div style="margin-top: 10px;">
+            <a href="/Information/${farm.id}" style="color: blue; text-decoration: underline;" target="_blank">
               查看詳細資料
             </a>
           </div>
-        `);
-      farmMarkers.addLayer(marker);
-      farmMarkersMap[farm.id] = marker;
-    }
+        </div>
+      `);
+    farmMarkers.addLayer(marker);
   });
-  
-  map.addLayer(farmMarkers);
 };
 
 // 定義光電案場類型的對應標籤
@@ -214,6 +172,7 @@ const addNewMarkers = (data) => {
 
   data.forEach((item) => {
     if (item.X_84 && item.Y_84 && item.CapacityValNow > 0) {
+      // 動態附加類型標籤
       const displayName = selectedLabel ? `${item.Name} (${selectedLabel})` : item.Name;
 
       const circle = L.circle([item.X_84, item.Y_84], {
@@ -235,14 +194,35 @@ const addNewMarkers = (data) => {
   });
 };
 
-// 聚焦到指定座標
-const focusOnLocation = (address) => {
-  const farm = farms.value.find(f => f.address === address);
-  if (farm && map) {
-    map.setView([farm.latitude, farm.longitude], 15);
-    if (farmMarkersMap[farm.id]) {
-      farmMarkersMap[farm.id].openPopup();
+// 更改地圖圖層的函數
+const changeLayer = () => {
+  map.eachLayer((layer) => {
+    if (layer instanceof L.TileLayer) {
+      map.removeLayer(layer);
     }
+  });
+
+  let layerUrl;
+  switch (selectedLayer.value) {
+    case 'satellite':
+      layerUrl = "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png";
+      break;
+    case 'terrain':
+      layerUrl = "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png";
+      break;
+    default:
+      layerUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  }
+
+  L.tileLayer(layerUrl, {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(map);
+};
+
+// 聚焦到指定座標
+const focusOnLocation = (lat, lng) => {
+  if (map) {
+    map.setView([lat, lng], 15);
   }
 };
 
@@ -253,53 +233,26 @@ onMounted(() => {
     zoom: 10,
   });
 
-  // 定義多個底圖
-  const streetLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  });
-  const terrainLayer = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors',
-  });
-
-  // 預設加街道圖層
-  streetLayer.addTo(map);
-
-  // 建立底圖切換控制
-  const baseLayers = {
-    "街道圖層": streetLayer,
-    "地形圖層": terrainLayer
-  };
-  L.control.layers(baseLayers, null, { position: 'topleft' }).addTo(map);
+  // 初始化默認的底圖
+  changeLayer();
 
   // 自訂標記圖示
-  customIcon = L.divIcon({
-    className: 'custom-div-icon',
-    html: `<div class=\"marker-pin\"><img src=\"/house.svg\" style=\"width:40px;height:40px;display:block;margin:auto;\" /></div>`,
-    iconSize: [30, 42],
-    iconAnchor: [15, 42]
-  });
-
-  // 自訂青培站標記圖示
-  youthIcon = L.divIcon({
-    className: 'custom-div-icon',
-    html: `<div class=\"marker-pin blue\"><img src=\"/youth.svg\" style=\"width:40px;height:40px;display:block;margin:auto;\" /></div>`,
-    iconSize: [30, 42],
-    iconAnchor: [15, 42]
+  customIcon = L.icon({
+    iconUrl: "https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+    iconSize: [22, 32],
   });
 
   // 自訂目前位置的圖示
-  const currentLocationIcon = L.divIcon({
-    className: 'custom-div-icon',
-    html: `<div class=\"marker-pin green\"><img src=\"/house.svg\" style=\"width:40px;height:40px;display:block;margin:auto;\" /></div>`,
-    iconSize: [30, 42],
-    iconAnchor: [15, 42]
+  const currentLocationIcon = L.icon({
+    iconUrl: "https://raw.githubusercontent.com/map-map-cloud/map/refs/heads/main/src/assets/location.png", // 修改圖標顏色或樣式
+    iconSize: [22, 32],
   });
 
   // 添加標記群集層
   map.addLayer(farmMarkers);
   map.addLayer(newMarkers);
 
-  fetchFarms();
+  fetchFarms(); // 獲取並顯示農場資料
 
   // 初始化繪圖控制
   const drawItem = new L.FeatureGroup();
@@ -323,31 +276,33 @@ onMounted(() => {
 
   map.on(L.Draw.Event.CREATED, function (e) {
     const layer = e.layer;
-    drawItem.addLayer(layer);
+    drawItem.addLayer(layer); // 必須將畫完的圖層加入
     console.log("繪製的圖層:", layer);
   });
 
   // 添加「定位」圖標按鈕
   const locateIcon = L.Control.extend({
     options: {
-      position: "topleft",
+      position: "topleft", // 設定圖標位置
     },
     onAdd: function () {
       const container = L.DomUtil.create("div", "leaflet-bar leaflet-control");
       const icon = L.DomUtil.create("a", "", container);
-      icon.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" style="width:24px;height:24px;" alt="定位" />`;
+      icon.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/684/684908.png" style="width:24px;height:24px;" alt="定位" />`; // 定位圖標
       icon.href = "#";
 
+      // 點擊事件：定位使用者
       L.DomEvent.on(icon, "click", function (e) {
         L.DomEvent.stopPropagation(e);
         L.DomEvent.preventDefault(e);
-        locateUser();
+        locateUser(); // 呼叫定位函數
       });
 
       return container;
     },
   });
 
+  // 在地圖上新增定位按鈕
   map.addControl(new locateIcon());
 
   // 定義定位函數
@@ -356,10 +311,13 @@ onMounted(() => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
+
+          // 將地圖中心設為目前位置
           map.setView([latitude, longitude], 15);
 
+          // 在地圖上顯示目前位置的標記
           const currentLocationMarker = L.marker([latitude, longitude], {
-            icon: currentLocationIcon,
+            icon: currentLocationIcon, // 使用不同的圖示
           })
             .addTo(map)
             .bindPopup("目前位置")
@@ -372,7 +330,7 @@ onMounted(() => {
           alert("無法取得目前位置，請檢查瀏覽器定位權限是否開啟。");
         },
         {
-          enableHighAccuracy: true,
+          enableHighAccuracy: true, // 啟用高精度模式
         }
       );
     } else {
@@ -385,119 +343,13 @@ onMounted(() => {
 <style>
 .mapContainer {
   height: 500px;
-}
-
-/* 青培站標記群集樣式 */
-.marker-cluster-youth {
-  background-color: rgba(0, 123, 255, 0.6);
-}
-
-.marker-cluster-youth div {
-  background-color: rgba(0, 123, 255, 0.8);
-  color: white;
-  font-weight: bold;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.marker-cluster-youth-small {
-  width: 30px !important;
-  height: 30px !important;
-}
-
-.marker-cluster-youth-medium {
-  width: 40px !important;
-  height: 40px !important;
-}
-
-.marker-cluster-youth-large {
-  width: 50px !important;
-  height: 50px !important;
-}
-
-.marker-cluster-youth-small div {
-  font-size: 12px;
-}
-
-.marker-cluster-youth-medium div {
-  font-size: 14px;
-}
-
-.marker-cluster-youth-large div {
-  font-size: 16px;
-}
-
-/* 自訂標記樣式 */
-.custom-div-icon {
-  background: none;
-  border: none;
-}
-
-.marker-pin {
-  background: none !important;
-  border: none !important;
-  width: auto !important;
-  height: auto !important;
-  position: static !important;
-  transform: none !important;
-  margin: 0 !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: none !important;
-}
-
-.marker-pin.blue {
-  background: none !important;
-}
-
-.marker-pin.green {
-  background: none !important;
-}
-
-.marker-pin svg {
-  color: white;
-  transform: rotate(45deg);
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-}
-
-.marker-pin::after {
-  content: none !important;
-  display: none !important;
-}
-
-.leaflet-control-layers {
-  font-size: 1em;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px #90caf9;
-  padding: 2px 4px !important;
-  min-width: 36px;
-  min-height: 36px;
-}
-
-.leaflet-control-layers-toggle {
-  width: 21px !important;
-  height: 21px !important;
-  background-size: 20px 20px !important;
-}
-
-.leaflet-control-layers-expanded {
-  min-width: 120px;
-  font-size: 1em;
-  border-radius: 10px !important;
-  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.15);
-  border: 1.5px solid #90caf9;
-  padding: 8px 10px 8px 10px !important;
+  /* 調整地圖容器的高度 */
 }
 </style>
 
+
 <style scoped>
+
 .a {
   width: 100%;
 }
@@ -590,7 +442,6 @@ onMounted(() => {
   background: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
-  cursor: pointer;
 }
 
 .card:hover {
@@ -651,6 +502,7 @@ onMounted(() => {
   text-align: center;
 }
 
+/*footer*/
 .footer {
   position: fixed;
   bottom: 0px;
@@ -685,6 +537,7 @@ a {
   color: #fff;
 }
 
+/*響應式*/
 @media (min-width: 389px) {
   .cardc {
     height: 30vh;
@@ -694,6 +547,7 @@ a {
     width: 100%;
   }
 
+  /*搜尋*/
   .p-sideContent {
     height: 60vh;
   }
@@ -748,6 +602,7 @@ a {
     height: 250px;
   }
 
+  /*搜尋*/
   .c-shrinkIcon__input {
     width: 100%;
   }
@@ -769,65 +624,70 @@ a {
 
 .layer-select {
   position: absolute;
-  top: 18px;
-  left: 68px;
+  /* 讓選單浮在地圖上 */
+  top: 10px;
+  /* 你可以根據需要調整 */
+  left: 50px;
+  /* 你可以根據需要調整 */
   z-index: 1000;
-  background: transparent;
-  padding: 0;
+  /* 確保它在地圖之上 */
+  background: white;
+  /* 背景顏色 */
+  padding: 10px;
+  /* 內邊距 */
+  border-radius: 5px;
+  /* 圆角 */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  /* 陰影效果 */
+}
+</style>
+
+
+<script>
+export default {
+  data() {
+    return {
+      selectedLayer: 'streets',
+      isLayerMenuVisible: false,
+    };
+  },
+  methods: {
+    toggleLayerMenu() {
+      this.isLayerMenuVisible = !this.isLayerMenuVisible;
+    },
+    changeLayer() {
+      console.log('Selected Layer:', this.selectedLayer);
+      this.isLayerMenuVisible = false; // 選擇圖層後自動關閉選單
+    },
+  },
+};
+</script>
+
+<style>
+.layer-select {
+  padding: 0px !important;
+  position: relative;
 }
 
 .layer-icon {
-  background: #1976d2;
+  background: transparent;
   border: none;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  box-shadow: 0 2px 8px #90caf9;
-  color: #fff;
-  font-size: 1.5em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s, box-shadow 0.2s;
   cursor: pointer;
-  outline: none;
-}
-.layer-icon:hover {
-  background: #1565c0;
-  box-shadow: 0 4px 16px #1976d2;
-}
-
-.icon-letter {
-  font-weight: bold;
-  font-size: 1em;
-  letter-spacing: 1px;
+  /* font-size: 24px; */
+  color: #007bff;
+  width: 30px;
+  height: 30px;
 }
 
 .layer-dropdown {
   position: absolute;
-  top: 54px;
+  top: 40px;
   left: 0;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.15);
-  border: 1.5px solid #90caf9;
+  background-color: white;
+  border: 1px solid #ccc;
   z-index: 10;
-  padding: 16px 18px 12px 18px;
-  min-width: 140px;
-}
+  padding: 10px;
+  width: max-content;
 
-.layer-dropdown select.form-control {
-  width: 100%;
-  border-radius: 8px;
-  border: 1.5px solid #90caf9;
-  padding: 8px 12px;
-  font-size: 1em;
-  background: #f5fafd;
-  color: #1976d2;
-  outline: none;
-  transition: border 0.2s;
-}
-.layer-dropdown select.form-control:focus {
-  border: 1.5px solid #1976d2;
 }
 </style>

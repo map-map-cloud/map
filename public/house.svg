@@ -1,0 +1,13 @@
+<svg width="64" height="64" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g>
+    <!-- 屋頂 -->
+    <polygon points="16,5 4,16 7,16 7,27 25,27 25,16 28,16" fill="#2196f3" stroke="#1565c0" stroke-width="1.5"/>
+    <!-- 牆面 -->
+    <rect x="9" y="16" width="14" height="11" fill="#fff" stroke="#bdbdbd" stroke-width="1.2"/>
+    <!-- 門 -->
+    <rect x="15" y="21" width="2" height="6" fill="#90caf9" stroke="#1565c0" stroke-width="1"/>
+    <!-- 窗戶 -->
+    <rect x="11" y="19" width="2" height="3" fill="#e3f2fd" stroke="#90caf9" stroke-width="0.8"/>
+    <rect x="19" y="19" width="2" height="3" fill="#e3f2fd" stroke="#90caf9" stroke-width="0.8"/>
+  </g>
+</svg> 
