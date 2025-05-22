@@ -10,7 +10,7 @@ export default defineConfig({
     port: 80          // 修改端口為80
   },
   plugins: [vue()],
-  base: './',  // 修改為相對路徑，確保在子目錄也能正常訪問
+  base: '/',  // 改回絕對路徑
   publicDir: 'public',  // 指定 public 目錄
   resolve: {
     alias: {
@@ -30,6 +30,11 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: `@import "bootstrap/scss/functions";`,
+      },
+    },
+  },
+})
+scss/functions";`,
       },
     },
   },
