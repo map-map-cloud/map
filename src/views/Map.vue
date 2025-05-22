@@ -76,6 +76,7 @@ import "leaflet-draw/dist/leaflet.draw.js";
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { faHouse, faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import youthIcon from '../assets/youth.svg'
 
 library.add(faHouse, faArrowRight);
 
@@ -282,7 +283,7 @@ onMounted(() => {
   // 自訂青培站標記圖示
   youthIcon = L.divIcon({
     className: 'custom-div-icon',
-    html: `<div class=\"marker-pin blue\"><img src=\"/youth.svg\" style=\"width:40px;height:40px;display:block;margin:auto;\" /></div>`,
+    html: `<div class=\"marker-pin blue\"><img src=\"${youthIcon}\" style=\"width:40px;height:40px;display:block;margin:auto;\" /></div>`,
     iconSize: [30, 42],
     iconAnchor: [15, 42]
   });
