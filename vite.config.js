@@ -1,41 +1,19 @@
-import { fileURLToPath, URL } from 'node:url'
-
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { fileURLToPath, URL } from 'node:url'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   server: {
     host: '0.0.0.0',  // 允許所有IP連接
-    port: 80          // 修改端口為80
+    port: 80         // 預設端口
   },
   plugins: [vue()],
-  base: '/',  // 改回絕對路徑
-  publicDir: 'public',  // 指定 public 目錄
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
-  },
-  build: {
-    assetsDir: 'assets',
-    rollupOptions: {
-      output: {
-        assetFileNames: 'assets/[name].[hash][extname]'
-      }
-    },
-    copyPublicDir: true  // 確保複製 public 目錄到根目錄
-  },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        additionalData: `@import "bootstrap/scss/functions";`,
-      },
-    },
-  },
-})
-scss/functions";`,
-      },
-    },
-  },
-})
+  }
+}) new URL('./src', import.meta.url))
+    }
+  }
+}) 

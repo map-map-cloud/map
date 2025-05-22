@@ -114,8 +114,15 @@ const filteredFarms = computed(() => {
 
 // 自訂標記圖示
 let customIcon;
-let youthIcon;
 let map;
+
+// 自訂青培站標記圖示
+const youthIconDiv = L.divIcon({
+  className: 'custom-div-icon',
+  html: `<div class=\"marker-pin blue\"><img src=\"${youthIcon}\" style=\"width:40px;height:40px;display:block;margin:auto;\" /></div>`,
+  iconSize: [30, 42],
+  iconAnchor: [15, 42]
+});
 
 // 獲取農場資料的函數
 const fetchFarms = async () => {
@@ -130,7 +137,6 @@ const fetchFarms = async () => {
           name: item.base_name,
           company_name: item.company_name,
           address: `${item.county}${item.town}${item.address}`,
-          // phone: '',
           latitude: parseFloat(item.latitude),
           longitude: parseFloat(item.longitude),
           website: item.website,
@@ -171,7 +177,7 @@ const addFarmMarkers = (farmData) => {
   farmData.forEach((farm) => {
     if (farm.latitude && farm.longitude) {
       const marker = L.marker([farm.latitude, farm.longitude], { 
-        icon: youthIcon
+        icon: youthIconDiv
       })
         .bindPopup(`
           <div class="pop" style="text-align:center;min-width:180px;">
@@ -280,22 +286,6 @@ onMounted(() => {
     iconAnchor: [15, 42]
   });
 
-  // 自訂青培站標記圖示
-  youthIcon = L.divIcon({
-    className: 'custom-div-icon',
-    html: `<div class=\"marker-pin blue\"><img src=\"${youthIcon}\" style=\"width:40px;height:40px;display:block;margin:auto;\" /></div>`,
-    iconSize: [30, 42],
-    iconAnchor: [15, 42]
-  });
-
-  // 自訂目前位置的圖示
-  const currentLocationIcon = L.divIcon({
-    className: 'custom-div-icon',
-    html: `<div class=\"marker-pin green\"><img src=\"/house.svg\" style=\"width:40px;height:40px;display:block;margin:auto;\" /></div>`,
-    iconSize: [30, 42],
-    iconAnchor: [15, 42]
-  });
-
   // 添加標記群集層
   map.addLayer(farmMarkers);
   map.addLayer(newMarkers);
@@ -360,7 +350,7 @@ onMounted(() => {
           map.setView([latitude, longitude], 15);
 
           const currentLocationMarker = L.marker([latitude, longitude], {
-            icon: currentLocationIcon,
+            icon: customIcon,
           })
             .addTo(map)
             .bindPopup("目前位置")
@@ -793,6 +783,7 @@ a {
   cursor: pointer;
   outline: none;
 }
+
 .layer-icon:hover {
   background: #1565c0;
   box-shadow: 0 4px 16px #1976d2;
@@ -828,7 +819,8 @@ a {
   outline: none;
   transition: border 0.2s;
 }
+
 .layer-dropdown select.form-control:focus {
   border: 1.5px solid #1976d2;
 }
-</style>
+</style> 
