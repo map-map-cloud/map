@@ -2,7 +2,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 20 # 這裡指定了 Node.js 20 LTS 版本，請務必加上
+      nodejs: 20 # 確保這行在這裡，並設定為 20 或更高的版本
     commands:
       - echo "Installing dependencies..."
       - npm install
@@ -11,6 +11,6 @@ phases:
       - echo "Building the project..."
       - npm run build
 artifacts:
-  base-directory: dist # 告訴 CodeBuild 你的構建產物在 'dist' 目錄
+  base-directory: dist
   files:
-    - '**/*' # 包含 'dist' 目錄下的所有文件
+    - '**/*'
