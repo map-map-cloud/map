@@ -13,7 +13,5 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   }
-}) new URL('./src', import.meta.url))
-    }
-  }
-}) 
+})
+//1 URL('./src', import.meta.url))
