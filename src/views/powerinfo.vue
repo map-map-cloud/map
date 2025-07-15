@@ -662,7 +662,14 @@ function renderStackedChart(towns, townData) {
                 legend: {
                     position: 'top',
                     padding: 10
+                },
+                datalabels: {
+                    display: false
                 }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
             },
             scales: {
                 x: {
@@ -965,7 +972,8 @@ function renderComparisonChart(counties, countyData) {
                     backgroundColor: 'rgba(75, 192, 192, 0.7)',
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1,
-                    yAxisID: 'y'
+                    yAxisID: 'y',
+                    minBarLength: 10
                 },
                 {
                     label: '發電容量 (kW)',
@@ -973,7 +981,8 @@ function renderComparisonChart(counties, countyData) {
                     backgroundColor: 'rgba(255, 159, 64, 0.7)',
                     borderColor: 'rgba(255, 159, 64, 1)',
                     borderWidth: 1,
-                    yAxisID: 'y1'
+                    yAxisID: 'y1',
+                    minBarLength: 10
                 }
             ]
         },
@@ -983,7 +992,7 @@ function renderComparisonChart(counties, countyData) {
             plugins: {
                 title: {
                     display: true,
-                    text: '台灣各縣市光電案場比較',
+                    text: '台灣各縣市光電案場比較1',
                     font: {
                         size: 16,
                         weight: 'bold'
@@ -1010,7 +1019,14 @@ function renderComparisonChart(counties, countyData) {
                             return label;
                         }
                     }
+                },
+                datalabels: {
+                    display: false
                 }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
             },
             scales: {
                 x: {
@@ -1049,9 +1065,9 @@ function renderComparisonChart(counties, countyData) {
                     grid: {
                         drawOnChartArea: false
                     },
-                    ticks: {
-                        stepSize: 50000
-                    }
+                    // ticks: {
+                    //     stepSize: 50000
+                    // }
                 }
             }
         }
@@ -1137,7 +1153,14 @@ function renderCropYieldChart() {
                             return `總產量: ${context.raw.toLocaleString()} 公斤`
                         }
                     }
+                },
+                datalabels: {
+                    display: false
                 }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
             },
             scales: {
                 x: {
@@ -1229,6 +1252,7 @@ async function renderPowerDistributionMap() {
             style: feature => {
                 const townName = feature.properties.town
                 const power = powerData[townName] || 0
+                const powerMW = (power / 1000).toFixed(2)
                 return {
                     color: '#666',
                     fillColor: getColor(power),
@@ -1239,19 +1263,19 @@ async function renderPowerDistributionMap() {
             onEachFeature: (feature, layer) => {
                 const townName = feature.properties.town
                 const power = powerData[townName] || 0
-                
-                // 添加永久標籤顯示發電容量
+                const powerMW = (power / 1000).toFixed(2)
+                // 添加永久標籤顯示發電容量（MW）
                 const center = layer.getBounds().getCenter()
                 const label = L.divIcon({
                     className: 'power-label',
-                    html: `<div>${power.toLocaleString()} kW</div>`
+                    html: `<div>${Number(powerMW).toLocaleString()} MW</div>`
                 })
                 L.marker(center, { icon: label }).addTo(powerDistributionMap)
                 
                 layer.bindTooltip(`
                     <div style="text-align: center;">
                         <strong>${townName}</strong><br>
-                        發電容量: ${power.toLocaleString()} kW
+                        發電容量: ${Number(powerMW).toLocaleString()} MW
                     </div>
                 `, {
                     permanent: false,
