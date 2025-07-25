@@ -34,6 +34,11 @@ const router = createRouter({
       path: '/aboutme',
       name: 'aboutme',
       component: () => import('../views/aboutView.vue')
+    },
+    {
+      path: '/table',
+      name: 'table',
+      component: () => import('../views/TableDownload.vue')
     }
   ]
 })

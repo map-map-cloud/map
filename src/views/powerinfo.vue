@@ -49,7 +49,6 @@
                     <button @click="activeTab = 'chart'" :class="{ active: activeTab === 'chart' }">可視化圖</button>
                     <button @click="activeTab = 'comparison'"
                         :class="{ active: activeTab === 'comparison' }">縣市比較</button>
-                    <button @click="activeTab = 'table'" :class="{ active: activeTab === 'table' }">資料表格</button>
                 </div>
                 <div class="overview-section">
                     <div v-show="activeTab === 'map'" id="overviewMap" class="overview-map"></div>
@@ -64,7 +63,24 @@
                             <div class="chart-wrapper">
                                 <canvas id="myStackedChart" class="chart"></canvas>
                             </div>
-
+                        </div>
+                        <!-- 稅收圖表獨立一列在最下方 -->
+                        <div class="charts-row">
+                            <div class="chart-wrapper">
+                                <div class="tax-chart-header">
+                                    <span>稅收資料圖表</span>
+                                    <select v-model="taxChartYear" @change="renderTaxChartAndRelation">
+                                        <option v-for="y in taxChartYearList" :key="y" :value="y">{{ y }}</option>
+                                    </select>
+                                </div>
+                                <canvas id="taxBarChart" class="chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <div class="tax-chart-header">
+                                    <span>稅收與發電容量關係圖</span>
+                                </div>
+                                <canvas id="taxPowerRelationChart" class="chart"></canvas>
+                            </div>
                         </div>
                     </div>
                     <div v-show="activeTab === 'comparison'" class="comparison-container">
@@ -76,33 +92,6 @@
                                 <canvas id="comparisonChart" class="chart"></canvas>
                             </div>
                         </div>
-                    </div>
-                    <div v-show="activeTab === 'table'" class="table-container">
-                        <div class="state-filter">
-                            <span>狀態篩選：</span>
-                            <button v-for="state in states" :key="state" @click="selectedState = state"
-                                :class="{ active: selectedState === state }">
-                                {{ state }}
-                            </button>
-                        </div>
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>鄉鎮市</th>
-                                    <th>狀態</th>
-                                    <th>案場數量</th>
-                                    <th>發電容量 (kW)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="item in filteredTownData" :key="item.Town + item.State">
-                                    <td>{{ item.Town }}</td>
-                                    <td>{{ item.State }}</td>
-                                    <td>{{ item.Count }}</td>
-                                    <td>{{ parseFloat(item.CapacityValNow).toLocaleString() }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -139,6 +128,15 @@
                             <p class="stat-value">{{ selectedStats.application }}</p>
                         </div>
                     </div>
+                    <!-- 新增稅收卡片 -->
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <h3>稅收（合計所得）</h3>
+                            <p class="stat-value">{{ townshipTaxIncome !== null ? townshipTaxIncome.toLocaleString() + ' 元' : '載入中...' }}</p>
+                            <p class="stat-year">年份：{{ taxChartYear }} 年</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="content-wrapper">
                     <div class="map-chart-container">
@@ -150,6 +148,16 @@
                                 <canvas id="cropYieldChart" class="crop-chart"></canvas>
                             </div>
                         </div>
+                    </div>
+                    <!-- 新增：鄉鎮市村里稅收圖表 -->
+                    <div v-if="selectedArea" class="village-tax-chart-section">
+                        <div class="tax-chart-header">
+                            <span>{{ selectedArea }} 各村里稅收（合計所得）</span>
+                            <select v-model="taxChartYear" @change="renderVillageTaxChart">
+                                <option v-for="y in taxChartYearList" :key="y" :value="y">{{ y }}</option>
+                            </select>
+                        </div>
+                        <div id="villageTaxBarChartWrapper"></div>
                     </div>
                     <div class="crop-data-section" v-if="cropData.length > 0">
                         <h3 class="section-title">農作物產量資料</h3>
@@ -254,6 +262,236 @@ const sortOrder = ref('desc')
 let powerDistributionMap = null
 let powerDistributionLayer = null
 
+// 稅收圖表
+const taxChartYear = ref('')
+const taxChartYearList = ref([])
+let taxBarChart = null
+let taxRawData = []
+let taxPowerRelationChart = null
+
+const villageTaxBarCanvas = ref(null)
+let villageTaxBarChart = null
+
+// 新增控制 villageTaxBarChart 顯示的變數
+const showVillageTaxChart = ref(false)
+
+const townshipTaxIncome = ref(null)
+
+async function fetchTaxChartData(year) {
+    const res = await fetch(`https://map.soezsell.com/Get_tax_data.php?year=${year}`)
+    const data = await res.json()
+    // 過濾掉 village_borough 為「合計」的資料
+    return data.filter(item => item.village_borough !== '合計')
+}
+
+async function renderTaxChart() {
+    if (!taxChartYear.value) return
+    const data = await fetchTaxChartData(taxChartYear.value)
+    taxRawData = data
+    // 以鄉鎮市區為單位，合計各鄉鎮的合計所得
+    const townMap = {}
+    data.forEach(item => {
+        const key = item.township_district
+        if (!townMap[key]) {
+            townMap[key] = 0
+        }
+        townMap[key] += parseInt(item.total_income) || 0
+    })
+    // 依合計所得降冪排序
+    const sorted = Object.entries(townMap).sort((a, b) => b[1] - a[1])
+    const labels = sorted.map(([k]) => k)
+    const values = sorted.map(([_, v]) => v)
+    const ctx = document.getElementById('taxBarChart')
+    if (taxBarChart) taxBarChart.destroy()
+    taxBarChart = new window.Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '合計所得',
+                data: values,
+                backgroundColor: 'rgba(59, 122, 236, 0.7)',
+                borderColor: 'rgba(59, 122, 236, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `各鄉鎮市區合計所得（${taxChartYear.value}年）`,
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: {
+                        top: 10,
+                        bottom: 20
+                    }
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `合計所得: ${context.raw.toLocaleString()} 元`
+                        }
+                    }
+                },
+                datalabels: {
+                    display: false
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: '合計所得(元)',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString()
+                        }
+                    }
+                }
+            }
+        }
+    })
+}
+
+async function renderTaxChartAndRelation() {
+    await renderTaxChart()
+    await renderTaxPowerRelationChart()
+}
+
+async function renderTaxPowerRelationChart() {
+    if (!taxChartYear.value) return
+    // 取得稅收資料
+    const taxData = await fetchTaxChartData(taxChartYear.value)
+    // 取得發電容量資料（已併聯）
+    const powerRes = await fetch('https://soezsell.com/test-map/info.php?County=%E9%9B%B2%E6%9E%97%E7%B8%A3')
+    const powerData = await powerRes.json()
+    // 以鄉鎮市區為單位彙整
+    const taxTownMap = {}
+    taxData.forEach(item => {
+        const key = item.township_district
+        if (!taxTownMap[key]) taxTownMap[key] = 0
+        taxTownMap[key] += parseInt(item.total_income) || 0
+    })
+    const powerTownMap = {}
+    powerData.forEach(item => {
+        if (item.State === '已併聯') {
+            powerTownMap[item.Town] = parseFloat(item.CapacityValNow) || 0
+        }
+    })
+    // 組合資料
+    const points = Object.keys(taxTownMap).map(town => ({
+        x: powerTownMap[town] || 0,
+        y: taxTownMap[town],
+        label: town
+    }))
+    // 依照發電容量由大到小排序
+    points.sort((a, b) => b.x - a.x)
+    const ctx = document.getElementById('taxPowerRelationChart')
+    if (taxPowerRelationChart) taxPowerRelationChart.destroy()
+    taxPowerRelationChart = new window.Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: '鄉鎮市區',
+                data: points,
+                backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                pointRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `各鄉鎮市區稅收與發電容量關係（${taxChartYear.value}年）`,
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: {
+                        top: 10,
+                        bottom: 20
+                    }
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const d = context.raw
+                            return `${d.label}：發電容量 ${d.x.toLocaleString()} kW，合計所得 ${d.y.toLocaleString()} 元`
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: '發電容量 (kW)',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString()
+                        }
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: '合計所得 (元)',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString()
+                        }
+                    }
+                }
+            }
+        }
+    })
+}
+
 const filteredTownData = computed(() => {
     if (selectedState.value === '全部') {
         return townData.value
@@ -299,26 +537,29 @@ watch(topTwentyCrops, () => {
 
 // 監聽 activeTab 的變化
 watch(activeTab, (newTab) => {
-    if (newTab === 'map') {
-        nextTick(() => {
+    nextTick(() => {
+        if (newTab === 'map') {
             if (overviewMap) {
                 overviewMap.invalidateSize()
                 if (lastMapView) {
                     overviewMap.setView(lastMapView.center, lastMapView.zoom)
                 }
             }
-        })
-    } else if (newTab === 'chart') {
-        nextTick(() => {
+        } else if (newTab === 'chart') {
             renderPowerDistributionMap()
-        })
-    } else if (overviewMap) {
-        // 保存當前視圖狀態
-        lastMapView = {
-            center: overviewMap.getCenter(),
-            zoom: overviewMap.getZoom()
+            if (townData.value && townData.value.length > 0) {
+                const sortedData = [...townData.value].sort((a, b) => parseFloat(b.CapacityValNow) - parseFloat(a.CapacityValNow))
+                const towns = sortedData.map(item => item.Town)
+                const townDataObj = {
+                    sites: sortedData.map(item => parseInt(item.Count)),
+                    power: sortedData.map(item => parseFloat(item.CapacityValNow))
+                }
+                renderPieChart(towns, townDataObj)
+                renderStackedChart(towns, townDataObj)
+            }
+            renderTaxChartAndRelation()
         }
-    }
+    })
 })
 
 function toggleAll() {
@@ -345,6 +586,21 @@ async function goBack() {
         if (geojsonLayer) {
             geojsonLayer = null
         }
+        // 重新渲染所有可視化圖表
+        await nextTick()
+        renderPowerDistributionMap()
+        // 重新取得雲林資料後再渲染 pie/stacked
+        if (townData.value && townData.value.length > 0) {
+            const sortedData = [...townData.value].sort((a, b) => parseFloat(b.CapacityValNow) - parseFloat(a.CapacityValNow))
+            const towns = sortedData.map(item => item.Town)
+            const townDataObj = {
+                sites: sortedData.map(item => parseInt(item.Count)),
+                power: sortedData.map(item => parseFloat(item.CapacityValNow))
+            }
+            renderPieChart(towns, townDataObj)
+            renderStackedChart(towns, townDataObj)
+        }
+        renderTaxChartAndRelation()
     })
 }
 
@@ -390,6 +646,8 @@ async function selectArea(area) {
             }
             initMap()
             await updateMapForArea(area)
+            await nextTick()
+            renderVillageTaxChart()
         } catch (error) {
             console.error('無法獲取資料:', error)
         }
@@ -1252,7 +1510,6 @@ async function renderPowerDistributionMap() {
             style: feature => {
                 const townName = feature.properties.town
                 const power = powerData[townName] || 0
-                const powerMW = (power / 1000).toFixed(2)
                 return {
                     color: '#666',
                     fillColor: getColor(power),
@@ -1263,19 +1520,19 @@ async function renderPowerDistributionMap() {
             onEachFeature: (feature, layer) => {
                 const townName = feature.properties.town
                 const power = powerData[townName] || 0
-                const powerMW = (power / 1000).toFixed(2)
-                // 添加永久標籤顯示發電容量（MW）
+                
+                // 添加永久標籤顯示發電容量
                 const center = layer.getBounds().getCenter()
                 const label = L.divIcon({
                     className: 'power-label',
-                    html: `<div>${Number(powerMW).toLocaleString()} MW</div>`
+                    html: `<div>${power.toLocaleString()} kW</div>`
                 })
                 L.marker(center, { icon: label }).addTo(powerDistributionMap)
                 
                 layer.bindTooltip(`
                     <div style="text-align: center;">
                         <strong>${townName}</strong><br>
-                        發電容量: ${Number(powerMW).toLocaleString()} MW
+                        發電容量: ${power.toLocaleString()} kW
                     </div>
                 `, {
                     permanent: false,
@@ -1295,20 +1552,167 @@ async function renderPowerDistributionMap() {
     }
 }
 
-onMounted(() => {
+async function renderVillageTaxChart() {
+    if (!selectedArea.value || !taxChartYear.value) return
+    await nextTick()
+    // 1. 先清空 wrapper
+    const wrapper = document.getElementById('villageTaxBarChartWrapper')
+    if (!wrapper) return
+    wrapper.innerHTML = ''
+    // 2. 新建 canvas
+    const canvas = document.createElement('canvas')
+    canvas.style.height = '400px'
+    canvas.style.width = '100%'
+    canvas.width = wrapper.offsetWidth || 600
+    canvas.height = 400
+    wrapper.appendChild(canvas)
+    // 3. 建立 Chart
+    const ctx = canvas.getContext('2d')
+    if (villageTaxBarChart) {
+        try { villageTaxBarChart.destroy() } catch(e) {}
+        villageTaxBarChart = null
+    }
+    const res = await fetch(`https://map.soezsell.com/Get_tax_data.php?year=${taxChartYear.value}`)
+    const data = await res.json()
+    const filtered = data.filter(item => item.township_district === selectedArea.value && item.village_borough !== '合計')
+    const sorted = filtered.sort((a, b) => b.total_income - a.total_income)
+    const labels = sorted.map(i => i.village_borough)
+    const values = sorted.map(i => i.total_income)
+    villageTaxBarChart = new window.Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '合計所得',
+                data: values,
+                backgroundColor: 'rgba(59, 122, 236, 0.7)',
+                borderColor: 'rgba(59, 122, 236, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `${selectedArea.value} 各村里合計所得（${taxChartYear.value}年）`,
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    padding: {
+                        top: 10,
+                        bottom: 20
+                    }
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `合計所得: ${context.raw.toLocaleString()} 元`
+                        }
+                    }
+                },
+                datalabels: {
+                    display: false
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                        font: {
+                            size: 10
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: '合計所得(元)',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString()
+                        }
+                    }
+                }
+            }
+        }
+    })
+}
+
+// 取得鄉鎮市合計所得
+async function fetchTownshipTaxIncome() {
+    if (!selectedArea.value || !taxChartYear.value) {
+        townshipTaxIncome.value = null
+        return
+    }
+    try {
+        const res = await fetch(`https://map.soezsell.com/Get_tax_data.php?year=${taxChartYear.value}`)
+        const data = await res.json()
+        // 合計該鄉鎮市所有村里的合計所得
+        const sum = data.filter(item => item.township_district === selectedArea.value && item.village_borough !== '合計')
+            .reduce((acc, cur) => acc + (parseInt(cur.total_income) || 0), 0)
+        townshipTaxIncome.value = sum
+    } catch (e) {
+        townshipTaxIncome.value = null
+    }
+}
+
+// 監聽 selectedArea 或 taxChartYear 變動時自動取得
+watch([selectedArea, taxChartYear], () => {
+    fetchTownshipTaxIncome()
+}, { immediate: true })
+
+onMounted(async () => {
     const script = document.createElement('script')
     script.src = 'https://cdn.jsdelivr.net/npm/chart.js'
     script.onload = () => {
         const datalabelsScript = document.createElement('script')
         datalabelsScript.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0'
-        datalabelsScript.onload = () => {
+        datalabelsScript.onload = async () => {
             window.Chart.register(window.ChartDataLabels)
-            fetchTotalData()
-            fetchYunlinData()
-            renderOverviewMap()
-            renderPowerDistributionMap()
-            fetchCountyData()
-            fetchTownData()
+            await fetchTotalData()
+            await fetchYunlinData()
+            await renderOverviewMap()
+            await renderPowerDistributionMap()
+            await fetchCountyData()
+            await fetchTownData()
+            // 稅收圖表年份動態偵測
+            try {
+                const latestRes = await fetch('https://map.soezsell.com/Get_tax_data.php?year=110')
+                const latestJson = await latestRes.json()
+                let maxYear = 101
+                if (latestJson && latestJson.length > 0) {
+                    maxYear = Math.max(...latestJson.map(i => parseInt(i.year) || 0), 101)
+                }
+                const years = []
+                for (let y = 101; y <= maxYear; y++) {
+                    years.push(y)
+                }
+                taxChartYearList.value = years.reverse()
+                taxChartYear.value = taxChartYearList.value[0]
+                await nextTick()
+                renderTaxChartAndRelation()
+            } catch (e) {
+                console.error('稅收圖表年份偵測失敗', e)
+            }
         }
         document.head.appendChild(datalabelsScript)
     }
@@ -1787,7 +2191,7 @@ h2 {
     padding: 20px;
     overflow: auto;
     display: flex;
-    flex-direction: inherit;
+    flex-direction: column;
 }
 
 .charts-row {
@@ -1968,6 +2372,29 @@ h2 {
 
 .crop-table tr:last-child td {
     border-bottom: none;
+}
+
+.tax-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+.tax-chart-header select {
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    margin-left: 10px;
+}
+
+.village-tax-chart-section {
+    margin: 30px 0 10px 0;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(59, 122, 236, 0.08);
+    padding: 20px;
 }
 
 @media screen and (max-width: 768px) {
@@ -2183,5 +2610,11 @@ h2 {
 :deep(.white-tiles) {
     filter: brightness(0) invert(1);
     opacity: 0.5;
+}
+
+.village-tax-chart-section .chart {
+    min-height: 400px;
+    height: 400px;
+    width: 100% !important;
 }
 </style>
