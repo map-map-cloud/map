@@ -46,6 +46,11 @@
               <td>{{ item.Count }}</td>
               <td>{{ parseFloat(item.CapacityValNow).toLocaleString() }}</td>
             </tr>
+            <tr class="power-sum-row">
+              <td colspan="2">加總</td>
+              <td>{{ sumPower('Count') }}</td>
+              <td>{{ sumPower('CapacityValNow') }}</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -76,37 +81,39 @@
         </div>
       </div>
       <div class="table-section-with-download">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th v-for="col in taxColumns" :key="col.key" @click="sortTaxTable(col.key)" :class="{sorted: taxSortKey === col.key}">
-                {{ col.label }}
-                <span v-if="taxSortKey === col.key">{{ taxSortOrder === 'asc' ? '▲' : '▼' }}</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in sortedTaxData" :key="item.id">
-              <td v-for="col in taxColumns" :key="col.key">{{ formatTaxCell(item, col.key) }}</td>
-            </tr>
-            <tr class="tax-sum-row">
-              <td colspan="4">加總</td>
-              <td>{{ sumTax('tax_units') }}</td>
-              <td>{{ sumTax('total_income') }}</td>
-              <td>{{ sumTax('profit_income') }}</td>
-              <td>{{ sumTax('professional_income') }}</td>
-              <td>{{ sumTax('salary_income') }}</td>
-              <td>{{ sumTax('interest_income') }}</td>
-              <td>{{ sumTax('rental_royalty_income') }}</td>
-              <td>{{ sumTax('property_transaction_income') }}</td>
-              <td>{{ sumTax('windfall_gain_income') }}</td>
-              <td>{{ sumTax('dividend_income') }}</td>
-              <td>{{ sumTax('retirement_income') }}</td>
-              <td>{{ sumTax('other_income') }}</td>
-              <td>{{ sumTax('declared_greater_than_grouped') }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th v-for="col in taxColumns" :key="col.key" @click="sortTaxTable(col.key)" :class="{sorted: taxSortKey === col.key}">
+                  {{ col.label }}
+                  <span v-if="taxSortKey === col.key">{{ taxSortOrder === 'asc' ? '▲' : '▼' }}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in sortedTaxData" :key="item.id">
+                <td v-for="col in taxColumns" :key="col.key">{{ formatTaxCell(item, col.key) }}</td>
+              </tr>
+              <tr class="tax-sum-row">
+                <td colspan="4">加總</td>
+                <td>{{ sumTax('tax_units') }}</td>
+                <td>{{ sumTax('total_income') }}</td>
+                <td>{{ sumTax('profit_income') }}</td>
+                <td>{{ sumTax('professional_income') }}</td>
+                <td>{{ sumTax('salary_income') }}</td>
+                <td>{{ sumTax('interest_income') }}</td>
+                <td>{{ sumTax('rental_royalty_income') }}</td>
+                <td>{{ sumTax('property_transaction_income') }}</td>
+                <td>{{ sumTax('windfall_gain_income') }}</td>
+                <td>{{ sumTax('dividend_income') }}</td>
+                <td>{{ sumTax('retirement_income') }}</td>
+                <td>{{ sumTax('other_income') }}</td>
+                <td>{{ sumTax('declared_greater_than_grouped') }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
     <div v-if="activeTab === 'crop'">
@@ -160,6 +167,13 @@
               <td>{{ parseFloat(crop.harvest_area).toLocaleString() }}</td>
               <td>{{ parseFloat(crop.yield_per_hectare).toLocaleString() }}</td>
               <td>{{ parseFloat(crop.total_yield).toLocaleString() }}</td>
+            </tr>
+            <tr class="crop-sum-row" v-if="sortedCropData.length > 0">
+              <td>加總</td>
+              <td>{{ sumCrop('planting_area') }}</td>
+              <td>{{ sumCrop('harvest_area') }}</td>
+              <td>{{ sumCrop('yield_per_hectare') }}</td>
+              <td>{{ sumCrop('total_yield') }}</td>
             </tr>
           </tbody>
         </table>
@@ -353,6 +367,26 @@ function downloadTaxTable() {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
+}
+
+function sumPower(key) {
+  if (key === 'Count') {
+    return filteredTownData.value
+      .reduce((sum, item) => sum + (parseInt(item.Count) || 0), 0)
+      .toLocaleString()
+  }
+  if (key === 'CapacityValNow') {
+    return filteredTownData.value
+      .reduce((sum, item) => sum + (parseFloat(item.CapacityValNow) || 0), 0)
+      .toLocaleString()
+  }
+  return ''
+}
+
+function sumCrop(key) {
+  return cropData.value
+    .reduce((sum, item) => sum + (parseFloat(item[key]) || 0), 0)
+    .toLocaleString()
 }
 
 // 農作物產量資料
@@ -596,6 +630,20 @@ h2 {
 .tax-sum-row {
   background: #e0f7fa;
   font-weight: bold;
+}
+.power-sum-row {
+  background: #e0f7fa;
+  font-weight: bold;
+}
+.crop-sum-row {
+  background: #e0f7fa;
+  font-weight: bold;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.table-scroll .data-table {
+  min-width: 1200px;
 }
 .data-table {
   width: 100%;
