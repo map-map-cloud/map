@@ -57,9 +57,13 @@
                             <div class="chart-wrapper">
                                 <div id="powerDistributionMap" class="power-distribution-map"></div>
                             </div>
+                        </div>
+                        <div class="charts-row">
                             <div class="chart-wrapper">
                                 <canvas id="myPieChart" class="chart"></canvas>
                             </div>
+                        </div>
+                        <div class="charts-row">
                             <div class="chart-wrapper">
                                 <canvas id="myStackedChart" class="chart"></canvas>
                             </div>
@@ -547,6 +551,12 @@ watch(activeTab, (newTab) => {
             }
         } else if (newTab === 'chart') {
             renderPowerDistributionMap()
+            // 確保地圖在切換標籤後正確調整大小
+            setTimeout(() => {
+                if (powerDistributionMap) {
+                    powerDistributionMap.invalidateSize()
+                }
+            }, 200)
             if (townData.value && townData.value.length > 0) {
                 const sortedData = [...townData.value].sort((a, b) => parseFloat(b.CapacityValNow) - parseFloat(a.CapacityValNow))
                 const towns = sortedData.map(item => item.Town)
@@ -1069,7 +1079,7 @@ async function renderOverviewMap() {
             // 自動調整視圖以顯示整個雲林縣
             overviewMap.fitBounds(overviewLayer.getBounds(), {
                 padding: [0, 0],
-                maxZoom: 11
+                maxZoom: 20
             })
         }
 
@@ -1471,7 +1481,7 @@ async function renderPowerDistributionMap() {
         powerDistributionMap.remove()
     }
     
-    powerDistributionMap = L.map('powerDistributionMap').setView([23.709, 120.431], 10)
+    powerDistributionMap = L.map('powerDistributionMap').setView([23.709, 120.431], 12)
     
     // 添加白色背景圖層
     const whiteLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1521,13 +1531,29 @@ async function renderPowerDistributionMap() {
                 const townName = feature.properties.town
                 const power = powerData[townName] || 0
                 
-                // 添加永久標籤顯示發電容量
+                // 添加永久標籤顯示發電容量，但只在縮放級別足夠大時顯示
                 const center = layer.getBounds().getCenter()
                 const label = L.divIcon({
                     className: 'power-label',
                     html: `<div>${power.toLocaleString()} kW</div>`
                 })
-                L.marker(center, { icon: label }).addTo(powerDistributionMap)
+                const marker = L.marker(center, { icon: label })
+                
+                // 根據縮放級別決定是否顯示標籤
+                const updateLabelVisibility = () => {
+                    const zoom = powerDistributionMap.getZoom()
+                    if (zoom >= 11) {
+                        marker.addTo(powerDistributionMap)
+                    } else {
+                        marker.remove()
+                    }
+                }
+                
+                // 初始檢查
+                updateLabelVisibility()
+                
+                // 監聽縮放事件
+                powerDistributionMap.on('zoomend', updateLabelVisibility)
                 
                 layer.bindTooltip(`
                     <div style="text-align: center;">
@@ -1541,12 +1567,13 @@ async function renderPowerDistributionMap() {
             }
         }).addTo(powerDistributionMap)
 
-        // 自動調整視圖以顯示整個雲林縣，並添加一些內邊距
-        const bounds = powerDistributionLayer.getBounds()
-        powerDistributionMap.fitBounds(bounds, {
-            padding: [10, 10],
-            maxZoom: 18
-        })
+        // 設定固定的縮放級別和中心點，不使用 fitBounds
+        powerDistributionMap.setView([23.650, 120.431], 11)
+        
+        // 確保地圖大小正確適應容器
+        setTimeout(() => {
+            powerDistributionMap.invalidateSize()
+        }, 100)
     } catch (e) {
         console.error('載入地圖資料錯誤', e)
     }
@@ -2204,7 +2231,7 @@ h2 {
 }
 
 .chart-wrapper {
-    flex: 0 0 calc(50% - 10px);
+    flex: 1;
     min-width: 0;
     background: white;
     padding: 20px;

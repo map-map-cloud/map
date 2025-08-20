@@ -39,6 +39,11 @@ const router = createRouter({
       path: '/table',
       name: 'table',
       component: () => import('../views/TableDownload.vue')
+    },
+    {
+      path: '/bubble',
+      name: 'bubble',
+      component: () => import('../views/bubble.vue')
     }
   ]
 })

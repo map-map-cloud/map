@@ -380,34 +380,38 @@ onMounted(() => {
 
 /* 青培站標記群集樣式 */
 .marker-cluster-youth {
-  background-color: rgba(0, 123, 255, 0.6);
+  background: transparent !important;
+  border-radius: 50%;
+  overflow: hidden;
 }
 
 .marker-cluster-youth div {
-  background-color: rgba(0, 123, 255, 0.8);
+  background: rgba(0, 123, 255, 0.85) !important;
   color: white;
   font-weight: bold;
-  border-radius: 50%;
+  border-radius: 50% !important;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
+  border: 2px solid rgba(255,255,255,0.8);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
 .marker-cluster-youth-small {
-  width: 30px !important;
-  height: 30px !important;
+  width: 34px !important;
+  height: 34px !important;
 }
 
 .marker-cluster-youth-medium {
-  width: 40px !important;
-  height: 40px !important;
+  width: 44px !important;
+  height: 44px !important;
 }
 
 .marker-cluster-youth-large {
-  width: 50px !important;
-  height: 50px !important;
+  width: 54px !important;
+  height: 54px !important;
 }
 
 .marker-cluster-youth-small div {
