@@ -1038,36 +1038,34 @@ async function renderOverviewMap() {
                 const townName = feature.properties.town
                 const power = powerData[townName] || 0
                 
-                layer.on('click', function (e) {
-                    // 重置所有區域的樣式
-                    overviewLayer.eachLayer(l => {
-                        const town = l.feature.properties.town
-                        const townPower = powerData[town] || 0
-                        l.setStyle({
-                            color: '#ccc',
-                            fillColor: getColor(townPower),
-                            fillOpacity: 0.3,
-                            weight: 1
-                        })
-                    })
-                    
-                    // 設置被點擊區域的樣式
+                layer.on('mouseover', function (e) {
+                    // 設置被懸停區域的樣式
                     layer.setStyle({
                         color: '#000079',
                         fillColor: getColor(power),
                         fillOpacity: 0.6,
                         weight: 3
                     })
-                    
-                    const popup = L.popup()
-                        .setLatLng(e.latlng)
-                        .setContent(`
-                            <div style="text-align: center;">
-                                <h4 style="margin: 0; color: #000079;">${townName}</h4>
-                                <p style="margin: 5px 0;">發電容量: ${power.toLocaleString()} kW</p>
-                            </div>
-                        `)
-                        .openOn(overviewMap)
+                })
+                
+                layer.on('mouseout', function (e) {
+                    // 恢復區域的樣式
+                    layer.setStyle({
+                        color: '#ccc',
+                        fillColor: getColor(power),
+                        fillOpacity: 0.3,
+                        weight: 1
+                    })
+                })
+                
+                layer.bindTooltip(`
+                    <div style="text-align: center;">
+                        <h4 style="margin: 0; color: #000079;">${townName}</h4>
+                        <p style="margin: 5px 0;">發電容量: ${power.toLocaleString()} kW</p>
+                    </div>
+                `, {
+                    permanent: false,
+                    direction: 'center'
                 })
             }
         }).addTo(overviewMap)
@@ -1079,7 +1077,7 @@ async function renderOverviewMap() {
             // 自動調整視圖以顯示整個雲林縣
             overviewMap.fitBounds(overviewLayer.getBounds(), {
                 padding: [0, 0],
-                maxZoom: 20
+                maxZoom: 12
             })
         }
 
@@ -1090,7 +1088,7 @@ async function renderOverviewMap() {
             const center = L.geoJSON(f).getBounds().getCenter()
             const label = L.divIcon({
                 className: 'town-label',
-                html: `<div>${powerData[town]}kW</div>`
+                html: `<div style="font-weight: bold;">${(powerData[town] / 1000).toFixed(2)}MW</div>`
             })
             L.marker(center, { icon: label }).addTo(overviewMap)
         })
@@ -1260,7 +1258,7 @@ function renderComparisonChart(counties, countyData) {
             plugins: {
                 title: {
                     display: true,
-                    text: '台灣各縣市光電案場比較1',
+                    text: '台灣各縣市光電案場比較',
                     font: {
                         size: 16,
                         weight: 'bold'
@@ -1535,7 +1533,7 @@ async function renderPowerDistributionMap() {
                 const center = layer.getBounds().getCenter()
                 const label = L.divIcon({
                     className: 'power-label',
-                    html: `<div>${power.toLocaleString()} kW</div>`
+                    html: `<div style="font-weight: bold;">${(power / 1000).toFixed(2)} MW</div>`
                 })
                 const marker = L.marker(center, { icon: label })
                 
@@ -2644,4 +2642,4 @@ h2 {
     height: 400px;
     width: 100% !important;
 }
-</style>
+</style>>
