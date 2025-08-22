@@ -55,22 +55,26 @@
                     <div v-show="activeTab === 'chart'" class="charts-container">
                         <div class="charts-row">
                             <div class="chart-wrapper">
+                                <button class="fullscreen-btn" @click="openFullscreen('powerDistributionMap')">⤢</button>
                                 <div id="powerDistributionMap" class="power-distribution-map"></div>
                             </div>
                         </div>
                         <div class="charts-row">
                             <div class="chart-wrapper">
+                                <button class="fullscreen-btn" @click="openFullscreen('myPieChart')">⤢</button>
                                 <canvas id="myPieChart" class="chart"></canvas>
                             </div>
                         </div>
                         <div class="charts-row">
                             <div class="chart-wrapper">
+                                <button class="fullscreen-btn" @click="openFullscreen('myStackedChart')">⤢</button>
                                 <canvas id="myStackedChart" class="chart"></canvas>
                             </div>
                         </div>
                         <!-- 稅收圖表獨立一列在最下方 -->
                         <div class="charts-row">
                             <div class="chart-wrapper">
+                                <button class="fullscreen-btn" @click="openFullscreen('taxBarChart')">⤢</button>
                                 <div class="tax-chart-header">
                                     <span>稅收資料圖表</span>
                                     <select v-model="taxChartYear" @change="renderTaxChartAndRelation">
@@ -80,6 +84,7 @@
                                 <canvas id="taxBarChart" class="chart"></canvas>
                             </div>
                             <div class="chart-wrapper">
+                                <button class="fullscreen-btn" @click="openFullscreen('taxPowerRelationChart')">⤢</button>
                                 <div class="tax-chart-header">
                                     <span>稅收與發電容量關係圖</span>
                                 </div>
@@ -90,9 +95,11 @@
                     <div v-show="activeTab === 'comparison'" class="comparison-container">
                         <div class="comparison-row">
                             <div class="chart-wrapper">
+                                <button class="fullscreen-btn" @click="openFullscreen('comparisonPieChart')">⤢</button>
                                 <canvas id="comparisonPieChart" class="chart"></canvas>
                             </div>
                             <div class="chart-wrapper">
+                                <button class="fullscreen-btn" @click="openFullscreen('comparisonChart')">⤢</button>
                                 <canvas id="comparisonChart" class="chart"></canvas>
                             </div>
                         </div>
@@ -1705,6 +1712,60 @@ watch([selectedArea, taxChartYear], () => {
     fetchTownshipTaxIncome()
 }, { immediate: true })
 
+function openFullscreen(innerId) {
+    const el = document.getElementById(innerId)
+    if (!el) return
+    const wrapper = el.closest('.chart-wrapper')
+    if (!wrapper) return
+
+    // Toggle: if wrapper already fullscreen, exit; else enter
+    if (document.fullscreenElement) {
+        if (document.fullscreenElement === wrapper || wrapper.contains(document.fullscreenElement)) {
+            if (document.exitFullscreen) document.exitFullscreen()
+            return
+        }
+    }
+
+    lastFullscreenInnerId = innerId
+    if (wrapper.requestFullscreen) {
+        wrapper.requestFullscreen().then(() => {
+            setTimeout(() => resizeByInnerId(innerId), 50)
+        }).catch(() => {})
+    }
+}
+
+function resizeByInnerId(innerId) {
+    if (innerId === 'powerDistributionMap' && powerDistributionMap) powerDistributionMap.invalidateSize()
+    if (innerId === 'myPieChart' && pieChart) pieChart.resize()
+    if (innerId === 'myStackedChart' && stackedChart) stackedChart.resize()
+    if (innerId === 'taxBarChart' && taxBarChart) taxBarChart.resize()
+    if (innerId === 'taxPowerRelationChart' && taxPowerRelationChart) taxPowerRelationChart.resize()
+    if (innerId === 'comparisonPieChart' && comparisonPieChart) comparisonPieChart.resize()
+    if (innerId === 'comparisonChart' && comparisonChart) comparisonChart.resize()
+}
+
+let lastFullscreenInnerId = null
+
+if (typeof document !== 'undefined') {
+    document.addEventListener('fullscreenchange', () => {
+        // Remove previous markers, add to current fullscreen element
+        document.querySelectorAll('.is-fullscreen').forEach(el => el.classList.remove('is-fullscreen'))
+        const fsEl = document.fullscreenElement
+        if (fsEl) {
+            fsEl.classList.add('is-fullscreen')
+            if (!lastFullscreenInnerId) {
+                const inner = fsEl.querySelector('#powerDistributionMap, #myPieChart, #myStackedChart, #taxBarChart, #taxPowerRelationChart, #comparisonPieChart, #comparisonChart')
+                if (inner) lastFullscreenInnerId = inner.id
+            }
+            setTimeout(() => { if (lastFullscreenInnerId) resizeByInnerId(lastFullscreenInnerId) }, 50)
+        } else {
+            const prev = lastFullscreenInnerId
+            lastFullscreenInnerId = null
+            setTimeout(() => { if (prev) resizeByInnerId(prev) }, 50)
+        }
+    })
+}
+
 onMounted(async () => {
     const script = document.createElement('script')
     script.src = 'https://cdn.jsdelivr.net/npm/chart.js'
@@ -2237,11 +2298,50 @@ h2 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     position: relative;
     height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+.fullscreen-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 5;
+    background: rgba(0,0,0,0.5);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+}
+
+::global(.is-fullscreen) {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #fff !important;
+    border-radius: 0 !important;
+    padding: 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+::global(.is-fullscreen) .chart,
+::global(.is-fullscreen) .power-distribution-map {
+    width: 100% !important;
+    height: auto !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
 }
 
 .chart {
     width: 100%;
     height: 100%;
+    flex: 1;
+    min-height: 0;
 }
 
 .charts-row.map-row {
@@ -2632,7 +2732,7 @@ h2 {
 }
 
 /* 添加白色圖層樣式 */
-:deep(.white-tiles) {
+::deep(.white-tiles) {
     filter: brightness(0) invert(1);
     opacity: 0.5;
 }
@@ -2642,4 +2742,4 @@ h2 {
     height: 400px;
     width: 100% !important;
 }
-</style>>
+</style> 
