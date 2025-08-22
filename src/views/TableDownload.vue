@@ -389,6 +389,27 @@ function sumCrop(key) {
     .toLocaleString()
 }
 
+function downloadCropTable() {
+  const header = ['作物名稱', '種植面積(公頃)', '收穫面積(公頃)', '每公頃產量(公斤)', '總產量(公斤)']
+  const rows = sortedCropData.value.map(crop => [
+    crop.crop_name,
+    parseFloat(crop.planting_area),
+    parseFloat(crop.harvest_area),
+    parseFloat(crop.yield_per_hectare),
+    parseFloat(crop.total_yield)
+  ])
+  const csvContent = [header, ...rows].map(row => row.join(',')).join('\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  const year = selectedCropYear.value || '未指定年份'
+  const town = selectedCropTown.value || '未指定鄉鎮'
+  link.setAttribute('download', `雲林縣_${town}_${year}_農作物產量.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
 // 農作物產量資料
 const cropData = ref([])
 const cropYearList = ref([])
