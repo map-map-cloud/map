@@ -31,3 +31,4 @@ npm run build
 ## 安全性更新 (Security Updates)
 
 - **2026-04-07**: 升級 `vite` 至 `6.4.2` 版本，修復了開發伺服器 WebSocket 的任意檔案讀取漏洞 (Arbitrary File Read via Vite Dev Server WebSocket)。
+- **2026-04-07**: 執行批量安全修復，升級 `axios` (^1.14.0), `sequelize` (^6.37.8), `swiper` (^12.1.2)。
